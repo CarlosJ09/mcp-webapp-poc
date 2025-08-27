@@ -43,10 +43,62 @@ This project serves as a **Proof of Concept (POC)** to explore the feasibility o
 
 ### Protocols & Communication
 - **MCP (Model Context Protocol)** - Core communication protocol
-- **JSON-RPC 2.0** - Remote procedure call protocol
+- **JSON-RPC 2.0** - Remote procedure call protocol (see detailed explanation below)
 - **HTTP/HTTPS** - Transport layer protocol
-- **Server-Sent Events (SSE)** - Real-time communication
+- **Server-Sent Events (SSE)** - Streaming response handling
 - **CORS** - Cross-origin resource sharing
+
+## 🔌 Understanding JSON-RPC in MCP Context
+
+### What is JSON-RPC?
+**JSON-RPC 2.0** is a stateless, light-weight remote procedure call (RPC) protocol that uses JSON for data encoding. Unlike REST APIs that use HTTP methods (GET, POST, PUT, DELETE) with resource URLs, JSON-RPC uses a single endpoint with method names embedded in the request payload.
+
+### Why Does MCP Use JSON-RPC?
+
+MCP adopted JSON-RPC because:
+- **🎯 Method-Oriented**: Perfect for calling specific functions/tools remotely
+- **📦 Single Endpoint**: Simplifies transport layer implementation  
+- **🔄 Stateful Sessions**: Supports session-based communication better than REST
+- **⚡ Lightweight**: Minimal protocol overhead
+- **🤝 Bi-directional**: Easy request/response correlation with IDs
+
+### JSON-RPC vs REST API Comparison
+
+| Aspect | JSON-RPC | REST API |
+|--------|----------|----------|
+| **Endpoint** | Single URL (`/mcp`) | Multiple URLs (`/users`, `/posts`) |
+| **Methods** | `"method": "resources/read"` | `GET /api/resources` |
+| **Transport** | Always POST | GET/POST/PUT/DELETE |
+| **Structure** | `{"jsonrpc":"2.0","method":"..."}` | HTTP verb + URL path |
+| **Caching** | Limited (always POST) | Excellent (GET requests) |
+| **Discoverability** | Requires method listing | Self-documenting URLs |
+
+### Example MCP JSON-RPC Request/Response
+
+```typescript
+// Request: Initialize MCP connection
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "initialize",
+  "params": {
+    "protocolVersion": "2024-11-05",
+    "capabilities": {"resources": {"subscribe": true}}
+  }
+}
+
+// Response: Server capabilities
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "result": {
+    "protocolVersion": "2024-11-05",
+    "capabilities": {"resources": {"listChanged": true}}
+  }
+}
+```
+
+This is why our MCP client looks different from typical REST clients - it's designed around method calls rather than resource URLs.
 
 ## 📁 Project Structure
 
@@ -129,7 +181,7 @@ class MCPClient {
 ## 📊 Dashboard Features Implemented
 
 - **📈 Interactive Charts**: Sales trends, revenue breakdown, user demographics
-- **⚡ Real-time Updates**: Refresh data via MCP tool calls
+- **🔄 Manual Data Refresh**: On-demand data updates via MCP resource calls
 - **🎯 KPI Metrics**: Calculated business intelligence indicators  
 - **🔄 Session Management**: Automatic reconnection on session expiry
 - **📱 Responsive Design**: Mobile-first dashboard layout
@@ -141,7 +193,7 @@ The POC successfully demonstrates that frontend applications **CAN** communicate
 
 #### **Positive Outcomes**
 1. **✅ Technical Viability**: HTTP transport works effectively for MCP communication
-2. **✅ Real-world Performance**: Sub-second response times for data fetching
+2. **✅ Performance**: Sub-second response times for data fetching and tool execution
 3. **✅ Developer Experience**: Clean abstraction possible over JSON-RPC complexity
 4. **✅ Feature Completeness**: Full MCP protocol support (initialize, resources, tools)
 5. **✅ Error Handling**: Robust session management and retry mechanisms
@@ -151,21 +203,30 @@ The POC successfully demonstrates that frontend applications **CAN** communicate
 - **🎯 Direct Protocol Access**: No need for REST API wrapper layers
 - **⚡ Efficient Communication**: Single protocol for resources and tools
 - **🔒 Type Safety**: End-to-end TypeScript support possible
-- **🔄 Real-time Capabilities**: SSE support for live updates
 - **🧩 Tool Integration**: Direct access to MCP tools from frontend
 
-#### **Challenges & Considerations**
+#### **Critical Security Considerations ⚠️**
+- **🚨 Exposed Credentials**: MCP server URLs and session tokens visible in browser
+- **🌐 Client-Side Exposure**: All MCP endpoints and capabilities discoverable by users
+- **🔓 No Authentication Layer**: Direct client access bypasses traditional auth middleware
+- **👁️ Data Visibility**: All MCP resources and tools exposed to client inspection
+- **🛡️ CORS Vulnerabilities**: Opening CORS for MCP may expose other services
+
+#### **Additional Challenges & Considerations**
 - **🌐 CORS Complexity**: Requires careful server-side CORS configuration
-- **🔐 Session Management**: More complex than traditional REST APIs
+- **🔐 Session Management**: More complex than traditional REST APIs  
 - **📚 Learning Curve**: Developers need to understand JSON-RPC and MCP concepts
 - **🔧 Tooling**: Limited existing tooling compared to REST ecosystems
+- **💾 No HTTP Caching**: JSON-RPC POST requests can't leverage browser caching
 
 ## 🎯 Use Cases Where This Approach Excels
 
-1. **Dashboard Applications**: Real-time analytics with dynamic tool execution
-2. **AI-Powered UIs**: Frontends that need direct access to AI model tools
-3. **Developer Tools**: Applications requiring protocol-level MCP integration
-4. **Rapid Prototyping**: Quick POCs without building separate REST APIs
+**⚠️ IMPORTANT: These use cases assume NON-PRODUCTION or INTERNAL-ONLY environments**
+
+1. **Rapid Prototyping**: Quick POCs without building separate REST APIs
+2. **Internal Developer Tools**: Applications for trusted internal users only
+3. **Local Development**: Desktop applications with embedded MCP servers
+4. **Educational Projects**: Learning MCP protocol implementation
 
 ## 🚀 Getting Started
 
@@ -224,27 +285,61 @@ For traditional MCP usage with AI models, configure `claude_desktop_config.json`
 
 ## 🎓 Key Learnings & Recommendations
 
-### **Recommendations for Production Use**
-1. **Authentication**: Implement proper auth mechanisms for session security
-2. **Rate Limiting**: Add request throttling for production workloads  
-3. **Error Monitoring**: Comprehensive logging and error tracking
-4. **Caching Strategy**: Implement intelligent resource caching
-5. **WebSocket Upgrade**: Consider WebSocket for even better real-time performance
+### **🚨 CRITICAL SECURITY RECOMMENDATION**
 
-### **When to Consider This Approach**
-- ✅ Applications requiring dynamic tool execution
-- ✅ Real-time dashboards with complex data operations
-- ✅ AI-powered interfaces needing direct model access
-- ✅ Rapid prototyping without backend API development
+**For Production Applications: Use MCP on Backend, Expose REST APIs to Frontend**
 
-### **When to Prefer Traditional REST APIs**
-- ❌ Simple CRUD applications
-- ❌ Teams unfamiliar with JSON-RPC protocols
-- ❌ Applications requiring extensive HTTP middleware
-- ❌ Complex authentication/authorization requirements
+The security implications of direct frontend-to-MCP communication make it unsuitable for most production scenarios. The recommended architecture is:
+
+```
+Frontend → REST API → Backend MCP Client → MCP Server
+```
+
+This provides:
+- **🔒 Security**: Credentials and internal logic hidden from clients
+- **🛡️ Authentication**: Traditional auth middleware on REST endpoints  
+- **📊 Logging**: Server-side request logging and monitoring
+- **💾 Caching**: HTTP caching for better performance
+- **🔧 Control**: Fine-grained access control over MCP resources
+
+### **When Direct Frontend-to-MCP is Acceptable**
+- ✅ **Internal-only applications** with trusted users
+- ✅ **Rapid prototyping** and proof-of-concepts  
+- ✅ **Local development tools** (not web-deployed)
+- ✅ **Educational projects** for learning MCP
+
+### **When to Definitely Use Traditional Backend Architecture**
+- ❌ **Public-facing applications**
+- ❌ **Applications handling sensitive data**
+- ❌ **Multi-tenant systems**
+- ❌ **Applications requiring user authentication**
+- ❌ **Production systems requiring audit trails**
+- ❌ **Applications needing rate limiting per user**
 
 ## 🏆 Final Verdict
 
-**The POC conclusively proves that direct frontend-to-MCP communication is not only feasible but offers unique advantages for specific use cases.** While it introduces some complexity compared to traditional REST APIs, the benefits of direct protocol access, tool integration, and real-time capabilities make it a viable architectural choice for modern web applications, particularly those involving AI/ML workflows or dynamic data operations.
+### **Technical Feasibility: ✅ PROVEN**
+**The POC conclusively proves that direct frontend-to-MCP communication is technically feasible** and works well for the intended use case.
 
-This approach opens new possibilities for frontend applications to leverage the growing MCP ecosystem directly, potentially becoming a valuable pattern for next-generation web applications.
+### **Production Readiness: ⚠️ LIMITED**
+**However, serious security considerations make this approach unsuitable for most production applications.** The direct exposure of MCP endpoints, credentials, and internal logic to client-side code creates significant security risks.
+
+### **Recommended Production Architecture**
+For production systems, we recommend:
+```
+Frontend ← REST API ← Backend (MCP Client) ← MCP Server
+```
+
+This maintains the benefits of MCP on the backend while providing proper security boundaries.
+
+### **Value of This POC**
+This experiment provides valuable insights into:
+- **🔬 MCP Protocol Understanding**: How MCP works over HTTP transport
+- **⚙️ Implementation Patterns**: Techniques for JSON-RPC client development  
+- **🚧 Integration Challenges**: Real-world hurdles and solutions
+- **🏗️ Architecture Options**: When direct vs proxied MCP access makes sense
+
+### **Bottom Line**
+While **technically successful**, this approach should be reserved for **internal tools, prototypes, and educational purposes**. For production web applications serving external users, a traditional backend-proxied architecture remains the security-conscious choice.
+
+The real value of this POC is demonstrating **how MCP can be integrated into web applications** - whether directly or through backend proxies - opening new possibilities for AI-powered web interfaces.
