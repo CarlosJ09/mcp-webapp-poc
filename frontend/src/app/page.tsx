@@ -14,8 +14,15 @@ import {
 } from "@/components/dashboard";
 
 export default function Dashboard() {
-  // Use custom hook for data management
-  const { salesData, userAnalytics, performanceData, revenueData, loading, error, refreshData } = useDashboardData();
+  const {
+    salesData,
+    userAnalytics,
+    performanceData,
+    revenueData,
+    loading,
+    error,
+    refreshData,
+  } = useDashboardData();
 
   // Calculate KPI metrics
   const kpiMetrics = calculateKPIs(salesData, userAnalytics, performanceData);

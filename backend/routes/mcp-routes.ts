@@ -18,19 +18,16 @@ router.post("/", async (req, res) => {
   let transport = sessionId ? getTransport(sessionId) : undefined;
 
   if (transport) {
-    // Reuse existing transport
     console.log("Reusing existing transport for session:", sessionId);
   } else if (!sessionId && isInitializeRequest(req.body)) {
     console.log("Creating new transport for initialize request");
     
-    // Create new transport and server
     transport = createTransport();
     const server = createMCPServer();
     
     // Connect server to transport
     await server.connect(transport);
   } else {
-    // Invalid request
     res.status(400).json({
       jsonrpc: "2.0",
       error: {
@@ -42,7 +39,6 @@ router.post("/", async (req, res) => {
     return;
   }
 
-  // Handle the request
   await transport.handleRequest(req, res, req.body);
 });
 

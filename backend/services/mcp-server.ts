@@ -1,4 +1,4 @@
-import { randomUUID } from "crypto";
+import { randomUUID } from "node:crypto";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import { registerDashboardResources } from "../resources/dashboard-resources.ts";
@@ -32,7 +32,6 @@ export function createTransport(): StreamableHTTPServerTransport {
     // allowedHosts: ['127.0.0.1'],
   });
 
-  // Clean up transport when closed
   transport.onclose = () => {
     if (transport.sessionId) {
       delete transports[transport.sessionId];

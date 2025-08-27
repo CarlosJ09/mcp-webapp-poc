@@ -1,8 +1,3 @@
-/**
- * Custom hook for dashboard data management
- * Centralizes all MCP data fetching logic and state management
- */
-
 import { useState, useEffect, useCallback } from 'react';
 import { mcpClient, safeMCP } from '@/lib/mcp-client';
 import type { DashboardState, SalesData, UserAnalytics, PerformanceData, RevenueData } from '@/types/dashboard';
