@@ -1,4 +1,5 @@
 import express from "express";
+import cors from "cors";
 import { randomUUID } from "crypto";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
@@ -6,6 +7,27 @@ import { isInitializeRequest } from "@modelcontextprotocol/sdk/types.js";
 import { z } from "zod";
 
 const app = express();
+
+// Enable CORS for frontend connections
+app.use(cors({
+  origin: [
+    'http://localhost:3001',  // Next.js default dev port
+    'http://localhost:3000',  // Alternative Next.js port
+    'http://localhost:5173',  // Vite default port
+    'http://127.0.0.1:3001',  // Alternative localhost format
+    'http://127.0.0.1:3000'
+  ],
+  methods: ['GET', 'POST', 'DELETE', 'OPTIONS'],
+  allowedHeaders: [
+    'Content-Type', 
+    'Accept', 
+    'mcp-session-id',
+    'Authorization'
+  ],
+  exposedHeaders: ['mcp-session-id'], // Allow frontend to read this header
+  credentials: true
+}));
+
 app.use(express.json());
 
 // Map to store transports by session ID
@@ -15,12 +37,16 @@ const transports: { [sessionId: string]: StreamableHTTPServerTransport } = {};
 app.post('/mcp', async (req, res) => {
   // Check for existing session ID
   const sessionId = req.headers['mcp-session-id'] as string | undefined;
+  console.log('Received request with session ID:', sessionId);
+  console.log('Available transports:', Object.keys(transports));
   let transport: StreamableHTTPServerTransport;
 
   if (sessionId && transports[sessionId]) {
     // Reuse existing transport
+    console.log('Reusing existing transport for session:', sessionId);
     transport = transports[sessionId];
   } else if (!sessionId && isInitializeRequest(req.body)) {
+    console.log('Creating new transport for initialize request');
     // New initialization request
     transport = new StreamableHTTPServerTransport({
       sessionIdGenerator: () => randomUUID(),
