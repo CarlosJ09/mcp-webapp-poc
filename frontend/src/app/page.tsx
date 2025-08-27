@@ -1,267 +1,413 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { mcpClient, useMCP, MCPTool, MCPResource } from '../lib/mcp-client';
+import { useState, useEffect } from "react";
+import {
+  LineChart,
+  Line,
+  BarChart,
+  Bar,
+  PieChart,
+  Pie,
+  Cell,
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+} from "recharts";
+import { mcpClient, safeMCP } from "../lib/mcp-client";
 
-export default function Home() {
-  const [tools, setTools] = useState<MCPTool[]>([]);
-  const [resources, setResources] = useState<MCPResource[]>([]);
+interface SalesData {
+  month: string;
+  sales: number;
+  revenue: number;
+  profit: number;
+}
+
+interface UserAnalytics {
+  demographics: { age: string; users: number }[];
+  engagement: { day: string; activeUsers: number; sessions: number }[];
+}
+
+interface PerformanceData {
+  hour: string;
+  responseTime: number;
+  throughput: number;
+  errorRate: number;
+}
+
+interface RevenueData {
+  source: string;
+  value: number;
+  color: string;
+}
+
+export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  
-  // Tool demo state
-  const [addResult, setAddResult] = useState<string | null>(null);
-  const [num1, setNum1] = useState<number>(5);
-  const [num2, setNum2] = useState<number>(3);
-  
-  // Resource demo state
-  const [userData, setUserData] = useState<any>(null);
-  const [postsData, setPostsData] = useState<any>(null);
-  const [userId, setUserId] = useState<number>(1);
 
-  // Initialize MCP connection
+  // Dashboard data state
+  const [salesData, setSalesData] = useState<SalesData[]>([]);
+  const [userAnalytics, setUserAnalytics] = useState<UserAnalytics | null>(
+    null
+  );
+  const [performanceData, setPerformanceData] = useState<PerformanceData[]>([]);
+  const [revenueData, setRevenueData] = useState<RevenueData[]>([]);
+  const [realtimeData, setRealtimeData] = useState<any[]>([]);
+
+  // Initialize MCP connection and load dashboard data
   useEffect(() => {
-    const initMCP = async () => {
+    const initDashboard = async () => {
       setLoading(true);
-      const { data, error } = await useMCP(async () => {
-        return await mcpClient.initialize();
-      });
-      
-      if (data) {
-        setTools(data.tools);
-        setResources(data.resources);
+      try {
+        // Initialize MCP connection
+        const { error: initError } = await safeMCP(async () => {
+          return await mcpClient.initialize();
+        });
+
+        if (initError) {
+          setError(initError);
+          setLoading(false);
+          return;
+        }
+
+        // Load all dashboard data in parallel
+        const [salesResult, analyticsResult, performanceResult, revenueResult] =
+          await Promise.all([
+            safeMCP(() => mcpClient.readResource("sales://monthly")),
+            safeMCP(() => mcpClient.readResource("analytics://users")),
+            safeMCP(() => mcpClient.readResource("metrics://performance")),
+            safeMCP(() => mcpClient.readResource("revenue://breakdown")),
+          ]);
+
+        // Process sales data
+        if (salesResult.data) {
+          const salesContent = JSON.parse(salesResult.data.contents[0].text);
+          setSalesData(salesContent);
+        }
+
+        // Process user analytics
+        if (analyticsResult.data) {
+          const analyticsContent = JSON.parse(
+            analyticsResult.data.contents[0].text
+          );
+          setUserAnalytics(analyticsContent);
+        }
+
+        // Process performance data
+        if (performanceResult.data) {
+          const performanceContent = JSON.parse(
+            performanceResult.data.contents[0].text
+          );
+          setPerformanceData(performanceContent);
+        }
+
+        // Process revenue data
+        if (revenueResult.data) {
+          const revenueContent = JSON.parse(
+            revenueResult.data.contents[0].text
+          );
+          setRevenueData(revenueContent);
+        }
+
         setError(null);
-      } else {
-        setError(error);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Unknown error");
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     };
 
-    initMCP();
-
-    // Cleanup on unmount
-    return () => {
-      mcpClient.disconnect();
-    };
+    initDashboard();
   }, []);
 
-  const handleAddNumbers = async () => {
-    const { data, error } = await useMCP(async () => {
-      return await mcpClient.callTool('add', { a: num1, b: num2 });
-    });
-    
-    if (data) {
-      setAddResult(data.content?.[0]?.text || JSON.stringify(data));
-    } else {
-      setAddResult(`Error: ${error}`);
-    }
-  };
+  const refreshData = async () => {
+    setLoading(true);
+    // Reload all data
+    const [salesResult, analyticsResult, performanceResult, revenueResult] =
+      await Promise.all([
+        safeMCP(() => mcpClient.readResource("sales://monthly")),
+        safeMCP(() => mcpClient.readResource("analytics://users")),
+        safeMCP(() => mcpClient.readResource("metrics://performance")),
+        safeMCP(() => mcpClient.readResource("revenue://breakdown")),
+      ]);
 
-  const handleFetchUser = async () => {
-    setUserData('Loading...');
-    const { data, error } = await useMCP(async () => {
-      return await mcpClient.readResource(`user://${userId}`);
-    });
-    
-    if (data) {
-      const userContent = data.contents?.[0]?.text;
-      try {
-        setUserData(JSON.parse(userContent));
-      } catch {
-        setUserData(userContent);
-      }
-    } else {
-      setUserData(`Error: ${error}`);
-    }
-  };
+    if (salesResult.data)
+      setSalesData(JSON.parse(salesResult.data.contents[0].text));
+    if (analyticsResult.data)
+      setUserAnalytics(JSON.parse(analyticsResult.data.contents[0].text));
+    if (performanceResult.data)
+      setPerformanceData(JSON.parse(performanceResult.data.contents[0].text));
+    if (revenueResult.data)
+      setRevenueData(JSON.parse(revenueResult.data.contents[0].text));
 
-  const handleFetchPosts = async () => {
-    setPostsData('Loading...');
-    const { data, error } = await useMCP(async () => {
-      return await mcpClient.readResource('posts://list');
-    });
-    
-    if (data) {
-      const postsContent = data.contents?.[0]?.text;
-      try {
-        setPostsData(JSON.parse(postsContent));
-      } catch {
-        setPostsData(postsContent);
-      }
-    } else {
-      setPostsData(`Error: ${error}`);
-    }
+    setLoading(false);
   };
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-gray-100">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto mb-4"></div>
-          <p>Connecting to MCP Server...</p>
+          <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-lg text-gray-600">Loading Dashboard...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-4xl mx-auto px-4">
-        <h1 className="text-3xl font-bold text-gray-900 mb-8 text-center">
-          🔗 MCP Frontend Demo
-        </h1>
-        
-        {error ? (
-          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-6">
-            <div className="flex justify-between items-start">
-              <div>
-                <strong>Connection Error:</strong> {error}
-                <br />
-                <small>Make sure your MCP server is running on http://localhost:3000/mcp</small>
-              </div>
+    <div className="min-h-screen bg-gray-100">
+      {/* Header */}
+      <header className="bg-white shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 py-4">
+          <div className="flex justify-between items-center">
+            <h1 className="text-2xl font-bold text-gray-900">
+              📊 MCP Analytics Dashboard
+            </h1>
+            <div className="flex gap-3">
               <button
-                onClick={async () => {
-                  mcpClient.clearSession();
-                  setError(null);
-                  setLoading(true);
-                  const { data, error } = await useMCP(async () => {
-                    return await mcpClient.initialize();
-                  });
-                  
-                  if (data) {
-                    setTools(data.tools);
-                    setResources(data.resources);
-                    setError(null);
-                  } else {
-                    setError(error);
-                  }
-                  setLoading(false);
-                }}
-                className="px-3 py-1 bg-red-500 text-white text-sm rounded hover:bg-red-600"
+                onClick={refreshData}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
               >
-                Retry
+                🔄 Refresh Data
               </button>
+              {error && (
+                <div className="px-3 py-1 bg-red-100 text-red-800 rounded-md text-sm">
+                  Connection Error
+                </div>
+              )}
+              {!error && (
+                <div className="px-3 py-1 bg-green-100 text-green-800 rounded-md text-sm">
+                  ✅ MCP Connected
+                </div>
+              )}
             </div>
           </div>
-        ) : (
-          <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-6">
-            ✅ Connected to MCP Server
-          </div>
-        )}
+        </div>
+      </header>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Tools Demo */}
-          <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-xl font-semibold mb-4">🔧 Available Tools</h2>
-            <div className="space-y-4">
-              {tools.map((tool, index) => (
-                <div key={index} className="border-l-4 border-blue-500 pl-4">
-                  <h3 className="font-medium">{tool.name}</h3>
-                  <p className="text-sm text-gray-600">{tool.description}</p>
-                </div>
-              ))}
-              
-              {/* Addition Tool Demo */}
-              <div className="mt-6 p-4 bg-gray-50 rounded">
-                <h4 className="font-medium mb-3">Try the Addition Tool:</h4>
-                <div className="flex gap-2 mb-3">
-                  <input
-                    type="number"
-                    value={num1}
-                    onChange={(e) => setNum1(Number(e.target.value))}
-                    className="w-20 p-2 border rounded"
-                  />
-                  <span className="p-2">+</span>
-                  <input
-                    type="number"
-                    value={num2}
-                    onChange={(e) => setNum2(Number(e.target.value))}
-                    className="w-20 p-2 border rounded"
-                  />
-                  <button
-                    onClick={handleAddNumbers}
-                    className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-                  >
-                    Calculate
-                  </button>
-                </div>
-                {addResult && (
-                  <div className="p-2 bg-white border rounded">
-                    Result: <strong>{addResult}</strong>
-                  </div>
+      {/* Main Dashboard */}
+      <main className="max-w-7xl mx-auto px-4 py-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+          {/* KPI Cards */}
+          <div className="xl:col-span-3 grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl p-4">
+              <div className="text-sm opacity-80">Total Revenue</div>
+              <div className="text-2xl font-bold">
+                $
+                {salesData
+                  .reduce((sum, item) => sum + item.revenue, 0)
+                  .toLocaleString()}
+              </div>
+            </div>
+
+            <div className="bg-gradient-to-r from-green-500 to-green-600 text-white rounded-xl p-4">
+              <div className="text-sm opacity-80">Total Users</div>
+              <div className="text-2xl font-bold">
+                {userAnalytics?.demographics
+                  .reduce((sum, item) => sum + item.users, 0)
+                  .toLocaleString()}
+              </div>
+            </div>
+
+            <div className="bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-xl p-4">
+              <div className="text-sm opacity-80">Avg Response Time</div>
+              <div className="text-2xl font-bold">
+                {Math.round(
+                  performanceData.reduce(
+                    (sum, item) => sum + item.responseTime,
+                    0
+                  ) / performanceData.length
                 )}
+                ms
+              </div>
+            </div>
+
+            <div className="bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-xl p-4">
+              <div className="text-sm opacity-80">Total Profit</div>
+              <div className="text-2xl font-bold">
+                $
+                {salesData
+                  .reduce((sum, item) => sum + item.profit, 0)
+                  .toLocaleString()}
               </div>
             </div>
           </div>
 
-          {/* Resources Demo */}
-          <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-xl font-semibold mb-4">📊 Available Resources</h2>
-            <div className="space-y-4">
-              {resources.map((resource, index) => (
-                <div key={index} className="border-l-4 border-green-500 pl-4">
-                  <h3 className="font-medium">{resource.name}</h3>
-                  <p className="text-xs text-gray-500">{resource.uri}</p>
-                  <p className="text-sm text-gray-600">{resource.description}</p>
-                </div>
-              ))}
-              
-              {/* User Resource Demo */}
-              <div className="mt-6 p-4 bg-gray-50 rounded">
-                <h4 className="font-medium mb-3">Fetch User Data:</h4>
-                <div className="flex gap-2 mb-3">
-                  <input
-                    type="number"
-                    value={userId}
-                    onChange={(e) => setUserId(Number(e.target.value))}
-                    min="1"
-                    max="10"
-                    className="w-20 p-2 border rounded"
-                  />
-                  <button
-                    onClick={handleFetchUser}
-                    className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
-                  >
-                    Fetch User
-                  </button>
-                </div>
-                {userData && (
-                  <div className="p-2 bg-white border rounded text-xs max-h-32 overflow-y-auto">
-                    <pre>{typeof userData === 'string' ? userData : JSON.stringify(userData, null, 2)}</pre>
-                  </div>
-                )}
-              </div>
+          {/* Sales Trends */}
+          <div className="lg:col-span-2 bg-white rounded-xl shadow-lg p-6">
+            <h2 className="text-xl font-semibold mb-4 text-gray-800">
+              📈 Sales & Revenue Trends
+            </h2>
+            <ResponsiveContainer width="100%" height={300}>
+              <LineChart data={salesData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="month" />
+                <YAxis />
+                <Tooltip
+                  formatter={(value: number) => [
+                    `$${value.toLocaleString()}`,
+                    "",
+                  ]}
+                />
+                <Legend />
+                <Line
+                  type="monotone"
+                  dataKey="sales"
+                  stroke="#8884d8"
+                  strokeWidth={3}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="revenue"
+                  stroke="#82ca9d"
+                  strokeWidth={3}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="profit"
+                  stroke="#ffc658"
+                  strokeWidth={3}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
 
-              {/* Posts Resource Demo */}
-              <div className="mt-4 p-4 bg-gray-50 rounded">
-                <h4 className="font-medium mb-3">Fetch Posts:</h4>
-                <button
-                  onClick={handleFetchPosts}
-                  className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600 mb-3"
+          {/* Revenue Breakdown */}
+          <div className="bg-white rounded-xl shadow-lg p-6">
+            <h2 className="text-xl font-semibold mb-4 text-gray-800">
+              💰 Revenue Sources
+            </h2>
+            <ResponsiveContainer width="100%" height={300}>
+              <PieChart>
+                <Pie
+                  data={revenueData}
+                  cx="50%"
+                  cy="50%"
+                  outerRadius={80}
+                  dataKey="value"
+                  label={({ source, value }) =>
+                    `${source}: $${(value ? value / 1000 : 0).toFixed(0)}K`
+                  }
                 >
-                  Fetch Recent Posts
-                </button>
-                {postsData && (
-                  <div className="p-2 bg-white border rounded text-xs max-h-32 overflow-y-auto">
-                    <pre>{typeof postsData === 'string' ? postsData : JSON.stringify(postsData, null, 2)}</pre>
-                  </div>
-                )}
-              </div>
-            </div>
+                  {revenueData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.color} />
+                  ))}
+                </Pie>
+                <Tooltip
+                  formatter={(value: number) => `$${value.toLocaleString()}`}
+                />
+              </PieChart>
+            </ResponsiveContainer>
           </div>
-        </div>
 
-        {/* Important Notes */}
-        <div className="mt-8 bg-yellow-100 border border-yellow-400 text-yellow-800 px-4 py-3 rounded">
-          <h3 className="font-semibold mb-2">⚠️ Important Notes:</h3>
-          <ul className="text-sm space-y-1">
-            <li>• MCP is designed for AI models, not web frontends</li>
-            <li>• This demo shows it's technically possible but not recommended for production</li>
-            <li>• Consider creating a dedicated REST API instead</li>
-            <li>• CORS issues may occur in production environments</li>
-          </ul>
+          {/* User Demographics */}
+          <div className="bg-white rounded-xl shadow-lg p-6">
+            <h2 className="text-xl font-semibold mb-4 text-gray-800">
+              👥 User Demographics
+            </h2>
+            <ResponsiveContainer width="100%" height={250}>
+              <BarChart data={userAnalytics?.demographics || []}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="age" />
+                <YAxis />
+                <Tooltip />
+                <Bar dataKey="users" fill="#8884d8" />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+
+          {/* User Engagement */}
+          <div className="bg-white rounded-xl shadow-lg p-6">
+            <h2 className="text-xl font-semibold mb-4 text-gray-800">
+              📱 Daily Engagement
+            </h2>
+            <ResponsiveContainer width="100%" height={250}>
+              <AreaChart data={userAnalytics?.engagement || []}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="day" />
+                <YAxis />
+                <Tooltip />
+                <Area
+                  type="monotone"
+                  dataKey="activeUsers"
+                  stackId="1"
+                  stroke="#8884d8"
+                  fill="#8884d8"
+                />
+                <Area
+                  type="monotone"
+                  dataKey="sessions"
+                  stackId="2"
+                  stroke="#82ca9d"
+                  fill="#82ca9d"
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+
+          {/* Performance Metrics */}
+          <div className="bg-white rounded-xl shadow-lg p-6">
+            <h2 className="text-xl font-semibold mb-4 text-gray-800">
+              ⚡ Performance Metrics
+            </h2>
+            <ResponsiveContainer width="100%" height={250}>
+              <LineChart data={performanceData.slice(0, 12)}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="hour" />
+                <YAxis />
+                <Tooltip />
+                <Line
+                  type="monotone"
+                  dataKey="responseTime"
+                  stroke="#ff7300"
+                  name="Response Time (ms)"
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+
+          {/* Real-time Sales */}
+          {realtimeData.length > 0 && (
+            <div className="lg:col-span-2 bg-white rounded-xl shadow-lg p-6">
+              <h2 className="text-xl font-semibold mb-4 text-gray-800">
+                🔴 Real-time Sales
+              </h2>
+              <ResponsiveContainer width="100%" height={200}>
+                <AreaChart data={realtimeData}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis
+                    dataKey="timestamp"
+                    tickFormatter={(value) =>
+                      new Date(value).toLocaleTimeString()
+                    }
+                  />
+                  <YAxis />
+                  <Tooltip
+                    labelFormatter={(value) =>
+                      new Date(value).toLocaleTimeString()
+                    }
+                    formatter={(value: number) => [
+                      `$${value.toLocaleString()}`,
+                      "Sales",
+                    ]}
+                  />
+                  <Area
+                    type="monotone"
+                    dataKey="value"
+                    stroke="#00ff88"
+                    fill="#00ff88"
+                    fillOpacity={0.3}
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          )}
         </div>
-      </div>
+      </main>
     </div>
   );
 }

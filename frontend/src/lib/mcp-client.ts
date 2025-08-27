@@ -249,7 +249,7 @@ class MCPClient {
 export const mcpClient = new MCPClient('http://localhost:3000/mcp');
 
 // Helper function to safely use MCP (handles errors gracefully)
-export async function useMCP<T>(operation: () => Promise<T>): Promise<{ data: T | null, error: string | null }> {
+export async function safeMCP<T>(operation: () => Promise<T>): Promise<{ data: T | null, error: string | null }> {
   try {
     const data = await operation();
     return { data, error: null };
