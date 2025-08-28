@@ -10,12 +10,16 @@ export function registerDashboardResources(server: McpServer) {
       description: "Sales metrics by month for dashboard charts"
     },
     async () => {
-      const salesData = Array.from({ length: 12 }, (_, i) => ({
+ /*      const salesData = Array.from({ length: 12 }, (_, i) => ({
         month: new Date(2024, i, 1).toLocaleString('default', { month: 'short' }),
         sales: Math.floor(Math.random() * 100000) + 50000,
         revenue: Math.floor(Math.random() * 200000) + 100000,
         profit: Math.floor(Math.random() * 50000) + 20000,
-      }));
+      })); */
+
+      const salesData = await fetch("http://54.237.248.12:3000")
+      const salesDataJson = await salesData.json()
+      console.log(salesDataJson)
 
       return {
         contents: [{
