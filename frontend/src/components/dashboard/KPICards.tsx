@@ -3,8 +3,8 @@
  * Displays key performance indicators in card format
  */
 
-import type { KPIMetrics } from '@/types/dashboard';
-import { formatCurrency, formatNumber, formatResponseTime } from '@/utils/calculations';
+import type { KPIMetrics } from "@/types/dashboard";
+import { formatCurrency, formatNumber } from "@/utils/format";
 
 interface KPICardsProps {
   metrics: KPIMetrics;
@@ -13,23 +13,23 @@ interface KPICardsProps {
 export function KPICards({ metrics }: KPICardsProps) {
   const cards = [
     {
-      title: "Total Revenue",
-      value: formatCurrency(metrics.totalRevenue),
+      title: "Total Sales",
+      value: formatCurrency(metrics.totalSales),
       gradient: "from-blue-500 to-blue-600",
     },
     {
-      title: "Total Users",
-      value: formatNumber(metrics.totalUsers),
+      title: "Total Customers",
+      value: formatNumber(metrics.totalCustomers),
       gradient: "from-green-500 to-green-600",
     },
     {
-      title: "Avg Response Time",
-      value: formatResponseTime(metrics.avgResponseTime),
+      title: "Total Revenue",
+      value: formatCurrency(metrics.totalRevenue ?? 0),
       gradient: "from-purple-500 to-purple-600",
     },
     {
-      title: "Total Profit",
-      value: formatCurrency(metrics.totalProfit),
+      title: "Total Items",
+      value: formatCurrency(metrics.totalItems),
       gradient: "from-orange-500 to-orange-600",
     },
   ];

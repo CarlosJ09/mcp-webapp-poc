@@ -3,16 +3,63 @@
  * Centralized type definitions for better maintainability
  */
 
-export interface SalesData {
-  month: string;
-  sales: number;
-  revenue: number;
-  profit: number;
+export interface Sale {
+  id: string;
+  customer_id: string;
+  date: string;
+  total: string;
+  created_at?: string;
+  customer: Partial<Customer>;
+  payments: Payment[];
+  saleDetails: SaleDetail[];
 }
 
-export interface UserAnalytics {
-  demographics: DemographicData[];
-  engagement: EngagementData[];
+export interface SaleDetail {
+  id: string;
+  item_id: string;
+  quantity: string;
+  price: number;
+  item: { name: string };
+}
+
+export interface Payment {
+  id: string;
+  type: string;
+  amount: string;
+}
+
+export interface Customer {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  created_at: string;
+}
+
+export interface Item {
+  id: string;
+  name: string;
+  price: string;
+  stock: number;
+  created_at: string;
+}
+
+export interface DashboardMetricsData {
+  totalSales: number;
+  totalRevenue?: number;
+  totalCustomers: number;
+  totalItems: number;
+  averageOrderValue?: number;
+  topSellingItems: {
+    itemId: string;
+    itemName: string;
+    totalSold: number;
+  }[];
+  topCustomers: {
+    customerId: string;
+    customerName: string;
+    totalSpent: number;
+  }[];
 }
 
 export interface DemographicData {
@@ -26,31 +73,18 @@ export interface EngagementData {
   sessions: number;
 }
 
-export interface PerformanceData {
-  hour: string;
-  responseTime: number;
-  throughput: number;
-  errorRate: number;
-}
-
-export interface RevenueData {
-  source: string;
-  value: number;
-  color: string;
-}
-
 export interface KPIMetrics {
-  totalRevenue: number;
-  totalUsers: number;
-  avgResponseTime: number;
-  totalProfit: number;
+  totalSales: number;
+  totalCustomers: number;
+  totalItems: number;
+  totalRevenue?: number;
 }
 
 export interface DashboardState {
-  salesData: SalesData[];
-  userAnalytics: UserAnalytics | null;
-  performanceData: PerformanceData[];
-  revenueData: RevenueData[];
+  salesData: Sale[];
+  customersData: Customer[];
+  dashboardMetricsData: DashboardMetricsData[];
+  itemsData: Item[];
   loading: boolean;
   error: string | null;
 }

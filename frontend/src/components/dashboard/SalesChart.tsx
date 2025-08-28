@@ -14,10 +14,10 @@ import {
   Legend,
   ResponsiveContainer,
 } from 'recharts';
-import type { SalesData } from '@/types/dashboard';
+import type { Sale } from '@/types/dashboard';
 
 interface SalesChartProps {
-  data: SalesData[];
+  data: Sale[];
 }
 
 export function SalesChart({ data }: SalesChartProps) {

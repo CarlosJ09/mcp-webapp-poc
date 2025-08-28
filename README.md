@@ -130,7 +130,7 @@ mcp-webapp-poc/
 │   │   ├── types/
 │   │   │   └── dashboard.ts  # TypeScript definitions
 │   │   └── utils/
-│   │       └── calculations.ts # Business logic utilities
+│   │       └── format.ts # format logic utilities
 ```
 
 ## 🚧 Technical Challenges Faced & Solutions

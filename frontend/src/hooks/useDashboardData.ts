@@ -1,118 +1,178 @@
-import { useState, useEffect, useCallback } from 'react';
-import { mcpClient, safeMCP } from '@/lib/mcp-client';
-import type { DashboardState, SalesData, UserAnalytics, PerformanceData, RevenueData } from '@/types/dashboard';
+import { useState, useEffect, useCallback } from "react";
+import { useMCPResource, useMCPConnection } from "@/hooks/useMCP";
+import type {
+  DashboardState,
+  Sale,
+  Customer,
+  DashboardMetricsData,
+  Item,
+} from "@/types/dashboard";
+import type { ReadResourceRequest } from "@modelcontextprotocol/sdk/types.js";
 
 export function useDashboardData() {
   const [state, setState] = useState<DashboardState>({
     salesData: [],
-    userAnalytics: null,
-    performanceData: [],
-    revenueData: [],
+    customersData: [],
+    dashboardMetricsData: [],
+    itemsData: [],
     loading: true,
     error: null,
   });
 
+  const { readResourceData } = useMCPResource();
+  const { isConnected } = useMCPConnection();
+
   const updateState = (updates: Partial<DashboardState>) => {
-    setState(prev => ({ ...prev, ...updates }));
+    setState((prev) => ({ ...prev, ...updates }));
   };
 
   const loadDashboardData = useCallback(async () => {
+    if (!isConnected) {
+      updateState({ error: "MCP client not connected", loading: false });
+      return;
+    }
+
     updateState({ loading: true, error: null });
 
     try {
-      // Initialize MCP connection
-      const { error: initError } = await safeMCP(async () => {
-        return await mcpClient.initialize();
-      });
-
-      if (initError) {
-        updateState({ error: initError, loading: false });
-        return;
-      }
+      const resourceRequests: ReadResourceRequest[] = [
+        { params: { uri: "sales://all" }, method: "resources/read" },
+        { params: { uri: "customers://all" }, method: "resources/read" },
+        { params: { uri: "metrics://dashboard" }, method: "resources/read" },
+        { params: { uri: "items://all" }, method: "resources/read" },
+      ];
 
       // Load all dashboard data in parallel
-      const [salesResult, analyticsResult, performanceResult, revenueResult] =
-        await Promise.all([
-          safeMCP(() => mcpClient.readResource("sales://monthly")),
-          safeMCP(() => mcpClient.readResource("analytics://users")),
-          safeMCP(() => mcpClient.readResource("metrics://performance")),
-          safeMCP(() => mcpClient.readResource("revenue://breakdown")),
-        ]);
+      const [
+        salesResult,
+        customersResult,
+        dashboardMetricsResult,
+        itemsResult,
+      ] = await Promise.all([
+        readResourceData(resourceRequests[0]),
+        readResourceData(resourceRequests[1]),
+        readResourceData(resourceRequests[2]),
+        readResourceData(resourceRequests[3]),
+      ]);
 
       // Process and update data
       const updates: Partial<DashboardState> = {};
 
-      if (salesResult.data) {
-        const salesContent: SalesData[] = JSON.parse(salesResult.data.contents[0].text);
-        updates.salesData = salesContent;
+      if (salesResult?.contents?.[0]?.text) {
+        try {
+          const salesContent: Sale[] = JSON.parse(salesResult.contents[0].text);
+          updates.salesData = salesContent;
+        } catch (parseError) {
+          console.error("Error parsing sales data:", parseError);
+        }
       }
 
-      if (analyticsResult.data) {
-        const analyticsContent: UserAnalytics = JSON.parse(
-          analyticsResult.data.contents[0].text
-        );
-        updates.userAnalytics = analyticsContent;
+      if (customersResult?.contents?.[0]?.text) {
+        try {
+          const customersContent: Customer[] = JSON.parse(
+            customersResult.contents[0].text
+          );
+          updates.customersData = customersContent;
+        } catch (parseError) {
+          console.error("Error parsing customers data:", parseError);
+        }
       }
 
-      if (performanceResult.data) {
-        const performanceContent: PerformanceData[] = JSON.parse(
-          performanceResult.data.contents[0].text
-        );
-        updates.performanceData = performanceContent;
+      if (dashboardMetricsResult?.contents?.[0]?.text) {
+        try {
+          const dashboardMetricsContent: DashboardMetricsData[] = JSON.parse(
+            dashboardMetricsResult.contents[0].text
+          );
+          updates.dashboardMetricsData = dashboardMetricsContent;
+        } catch (parseError) {
+          console.error("Error parsing dashboard metrics data:", parseError);
+        }
       }
 
-      if (revenueResult.data) {
-        const revenueContent: RevenueData[] = JSON.parse(
-          revenueResult.data.contents[0].text
-        );
-        updates.revenueData = revenueContent;
+      if (itemsResult?.contents?.[0]?.text) {
+        try {
+          const itemsContent: Item[] = JSON.parse(itemsResult.contents[0].text);
+          updates.itemsData = itemsContent;
+        } catch (parseError) {
+          console.error("Error parsing items data:", parseError);
+        }
       }
 
       updateState({ ...updates, error: null, loading: false });
     } catch (err) {
+      console.error("Error loading dashboard data:", err);
       updateState({
-        error: err instanceof Error ? err.message : "Unknown error",
+        error: err instanceof Error ? err.message : "Unknown error occurred",
         loading: false,
       });
     }
-  }, []);
+  }, [isConnected, readResourceData]);
 
   const refreshData = useCallback(async () => {
-    updateState({ loading: true });
+    if (!isConnected) {
+      updateState({ error: "MCP client not connected" });
+      return;
+    }
 
-    const [salesResult, analyticsResult, performanceResult, revenueResult] =
-      await Promise.all([
-        safeMCP(() => mcpClient.readResource("sales://monthly")),
-        safeMCP(() => mcpClient.readResource("analytics://users")),
-        safeMCP(() => mcpClient.readResource("metrics://performance")),
-        safeMCP(() => mcpClient.readResource("revenue://breakdown")),
+    updateState({ loading: true, error: null });
+
+    try {
+      const resourceRequests: ReadResourceRequest[] = [
+        { params: { uri: "sales://all" }, method: "resources/read" },
+        { params: { uri: "customers://all" }, method: "resources/read" },
+        { params: { uri: "metrics://dashboard" }, method: "resources/read" },
+        { params: { uri: "items://all" }, method: "resources/read" },
+      ];
+
+      const [
+        salesResult,
+        customersResult,
+        dashboardMetricsResult,
+        itemsResult,
+      ] = await Promise.all([
+        readResourceData(resourceRequests[0]),
+        readResourceData(resourceRequests[1]),
+        readResourceData(resourceRequests[2]),
+        readResourceData(resourceRequests[3]),
       ]);
 
-    const updates: Partial<DashboardState> = {};
+      const updates: Partial<DashboardState> = {};
 
-    if (salesResult.data) {
-      updates.salesData = JSON.parse(salesResult.data.contents[0].text);
-    }
-    if (analyticsResult.data) {
-      updates.userAnalytics = JSON.parse(analyticsResult.data.contents[0].text);
-    }
-    if (performanceResult.data) {
-      updates.performanceData = JSON.parse(performanceResult.data.contents[0].text);
-    }
-    if (revenueResult.data) {
-      updates.revenueData = JSON.parse(revenueResult.data.contents[0].text);
-    }
+      if (salesResult?.contents?.[0]?.text) {
+        updates.salesData = JSON.parse(salesResult.contents[0].text);
+      }
+      if (customersResult?.contents?.[0]?.text) {
+        updates.customersData = JSON.parse(customersResult.contents[0].text);
+      }
+      if (dashboardMetricsResult?.contents?.[0]?.text) {
+        updates.dashboardMetricsData = JSON.parse(
+          dashboardMetricsResult.contents[0].text
+        );
+      }
+      if (itemsResult?.contents?.[0]?.text) {
+        updates.itemsData = JSON.parse(itemsResult.contents[0].text);
+      }
 
-    updateState({ ...updates, loading: false });
-  }, []);
+      updateState({ ...updates, error: null, loading: false });
+    } catch (err) {
+      console.error("Error refreshing dashboard data:", err);
+      updateState({
+        error: err instanceof Error ? err.message : "Failed to refresh data",
+        loading: false,
+      });
+    }
+  }, [isConnected, readResourceData]);
 
-  // Initialize data on mount
+  // Initialize data when MCP connection is ready
   useEffect(() => {
-    loadDashboardData();
-  }, [loadDashboardData]);
+    if (isConnected) {
+      loadDashboardData();
+    }
+  }, [isConnected, loadDashboardData]);
 
   return {
     ...state,
     refreshData,
+    isConnected,
   };
 }
