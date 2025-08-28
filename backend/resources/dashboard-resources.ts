@@ -1,120 +1,131 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 
+const HOSTDATA_URL = "http://54.237.248.12";
+
 export function registerDashboardResources(server: McpServer) {
   // Sales data resource
   server.registerResource(
     "sales-data",
-    "sales://monthly",
-    { 
-      title: "Monthly Sales Data",
-      description: "Sales metrics by month for dashboard charts"
+    "sales://all",
+    {
+      title: "General Sales Data",
+      description: "Sales data for dashboard charts",
     },
     async () => {
- /*      const salesData = Array.from({ length: 12 }, (_, i) => ({
-        month: new Date(2024, i, 1).toLocaleString('default', { month: 'short' }),
-        sales: Math.floor(Math.random() * 100000) + 50000,
-        revenue: Math.floor(Math.random() * 200000) + 100000,
-        profit: Math.floor(Math.random() * 50000) + 20000,
-      })); */
+      try {
+        const salesData = await fetch(`${HOSTDATA_URL}/sales`);
+        const salesDataJson = await salesData.json();
 
-      const salesData = await fetch("http://54.237.248.12:3000")
-      const salesDataJson = await salesData.json()
-      console.log(salesDataJson)
-
-      return {
-        contents: [{
-          uri: "sales://monthly",
-          mimeType: "application/json",
-          text: JSON.stringify(salesData, null, 2)
-        }]
-      };
+        return {
+          contents: [
+            {
+              uri: "sales://all",
+              mimeType: "application/json",
+              text: JSON.stringify(salesDataJson, null, 2),
+            },
+          ],
+        };
+      } catch (error) {
+        console.error("Error fetching sales data:", error);
+        return {
+          contents: [],
+        };
+      }
     }
   );
 
   // User analytics resource
   server.registerResource(
-    "user-analytics",
-    "analytics://users",
-    { 
-      title: "User Analytics",
-      description: "User engagement and demographic data"
+    "customers-data",
+    "customers://all",
+    {
+      title: "Customers Data",
+      description: "Customers data for dashboard charts",
     },
     async () => {
-      const userAnalytics = {
-        demographics: [
-          { age: "18-24", users: Math.floor(Math.random() * 5000) + 2000 },
-          { age: "25-34", users: Math.floor(Math.random() * 8000) + 5000 },
-          { age: "35-44", users: Math.floor(Math.random() * 6000) + 3000 },
-          { age: "45-54", users: Math.floor(Math.random() * 4000) + 2000 },
-          { age: "55+", users: Math.floor(Math.random() * 3000) + 1000 },
-        ],
-        engagement: Array.from({ length: 7 }, (_, i) => ({
-          day: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'][i],
-          activeUsers: Math.floor(Math.random() * 15000) + 10000,
-          sessions: Math.floor(Math.random() * 25000) + 20000,
-        }))
-      };
+      try {
+        const customersData = await fetch(`${HOSTDATA_URL}/customers`);
+        const customersDataJson = await customersData.json();
 
-      return {
-        contents: [{
-          uri: "analytics://users",
-          mimeType: "application/json",
-          text: JSON.stringify(userAnalytics, null, 2)
-        }]
-      };
+        return {
+          contents: [
+            {
+              uri: "customers://all",
+              mimeType: "application/json",
+              text: JSON.stringify(customersDataJson, null, 2),
+            },
+          ],
+        };
+      } catch (error) {
+        console.error("Error fetching customers data:", error);
+        return {
+          contents: [],
+        };
+      }
     }
   );
 
   // Performance metrics resource
   server.registerResource(
-    "performance-metrics",
-    "metrics://performance",
-    { 
-      title: "Performance Metrics",
-      description: "System performance and response time metrics"
+    "dashboard-metrics",
+    "metrics://dashboard",
+    {
+      title: "Dashboard Metrics",
+      description: "Dashboard metrics for dashboard charts",
     },
     async () => {
-      const performanceData = Array.from({ length: 24 }, (_, i) => ({
-        hour: `${i.toString().padStart(2, '0')}:00`,
-        responseTime: Math.random() * 500 + 100,
-        throughput: Math.random() * 1000 + 500,
-        errorRate: Math.random() * 5,
-      }));
+      try {
+        const dashboardMetricsData = await fetch(
+          `${HOSTDATA_URL}/metrics/dashboard`
+        );
+        const dashboardMetricsDataJson = await dashboardMetricsData.json();
 
-      return {
-        contents: [{
-          uri: "metrics://performance",
-          mimeType: "application/json",
-          text: JSON.stringify(performanceData, null, 2)
-        }]
-      };
+        return {
+          contents: [
+            {
+              uri: "metrics://dashboard",
+              mimeType: "application/json",
+              text: JSON.stringify(dashboardMetricsDataJson, null, 2),
+            },
+          ],
+        };
+      } catch (error) {
+        console.error("Error fetching customers data:", error);
+        return {
+          contents: [],
+        };
+      }
     }
   );
 
   // Revenue breakdown resource
   server.registerResource(
-    "revenue-breakdown",
-    "revenue://breakdown",
-    { 
-      title: "Revenue Breakdown",
-      description: "Revenue sources and distribution"
+    "items-data",
+    "items://all",
+    {
+      title: "Items Data",
+      description: "Items data for dashboard charts",
     },
     async () => {
-      const revenueBreakdown = [
-        { source: "Subscriptions", value: Math.floor(Math.random() * 500000) + 300000, color: "#8884d8" },
-        { source: "One-time Sales", value: Math.floor(Math.random() * 200000) + 100000, color: "#82ca9d" },
-        { source: "Partnerships", value: Math.floor(Math.random() * 150000) + 75000, color: "#ffc658" },
-        { source: "Advertising", value: Math.floor(Math.random() * 100000) + 50000, color: "#ff7300" },
-        { source: "Other", value: Math.floor(Math.random() * 50000) + 25000, color: "#0088fe" },
-      ];
+      try {
+        const itemsData = await fetch(`${HOSTDATA_URL}/items`);
+        const itemsDataJson = await itemsData.json();
 
-      return {
-        contents: [{
-          uri: "revenue://breakdown",
-          mimeType: "application/json",
-          text: JSON.stringify(revenueBreakdown, null, 2)
-        }]
-      };
+        return {
+          contents: [
+            {
+              uri: "items://all",
+              mimeType: "application/json",
+              text: JSON.stringify(itemsDataJson, null, 2),
+            },
+          ],
+        };
+      } catch (error) {
+        console.error("Error fetching customers data:", error);
+        return {
+          contents: [],
+        };
+      }
     }
   );
 }
