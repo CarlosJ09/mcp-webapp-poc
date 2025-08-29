@@ -1,9 +1,20 @@
+/**
+ * @fileoverview Dashboard tools for MCP WebApp backend
+ * Provides interactive tools for dashboard functionality
+ */
+
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
+import { createLogger } from "../config/logger";
+import { externalApiService } from "../services/external/api-service";
 
-const HOSTDATA_URL = "https://server-api-thryv.onrender.com";
+const logger = createLogger('Dashboard-Tools');
 
-export function registerDashboardTools(server: McpServer) {
+/**
+ * Register all dashboard-related tools with the MCP server
+ * @param server - MCP server instance
+ */
+export function registerDashboardTools(server: McpServer): void {
   server.registerTool(
     "get-sales-metrics",
     {
@@ -15,23 +26,30 @@ export function registerDashboardTools(server: McpServer) {
     },
     async ({ period = "monthly" }) => {
       try {
-        const salesData = await fetch(
-          `${HOSTDATA_URL}/metrics/sales-summary?period=${period}`
-        );
-        const salesDataJson = await salesData.json();
+        logger.debug('Fetching sales metrics', { period });
+        const salesResponse = await externalApiService.getSalesSummary(period);
+        
+        if (!salesResponse.success) {
+          throw new Error(salesResponse.error || 'Failed to fetch sales metrics');
+        }
 
         return {
           content: [
             {
               type: "text",
-              text: JSON.stringify(salesDataJson, null, 2),
+              text: JSON.stringify(salesResponse.data, null, 2),
             },
           ],
         };
       } catch (error) {
-        console.error("Error fetching sales data:", error);
+        logger.error("Error fetching sales metrics", error instanceof Error ? error : new Error('Unknown error'), { period });
         return {
-          content: [],
+          content: [
+            {
+              type: "text", 
+              text: JSON.stringify({ error: "Failed to fetch sales metrics", message: error instanceof Error ? error.message : 'Unknown error' }, null, 2),
+            },
+          ],
         };
       }
     }
@@ -45,23 +63,30 @@ export function registerDashboardTools(server: McpServer) {
     },
     async () => {
       try {
-        const customersData = await fetch(
-          `${HOSTDATA_URL}/metrics/customer-analytics`
-        );
-        const customersDataJson = await customersData.json();
+        logger.debug('Fetching customer analytics');
+        const analyticsResponse = await externalApiService.getCustomerAnalytics();
+        
+        if (!analyticsResponse.success) {
+          throw new Error(analyticsResponse.error || 'Failed to fetch customer analytics');
+        }
 
         return {
           content: [
             {
               type: "text",
-              text: JSON.stringify(customersDataJson, null, 2),
+              text: JSON.stringify(analyticsResponse.data, null, 2),
             },
           ],
         };
       } catch (error) {
-        console.error("Error fetching customers data:", error);
+        logger.error("Error fetching customer analytics", error instanceof Error ? error : new Error('Unknown error'));
         return {
-          content: [],
+          content: [
+            {
+              type: "text",
+              text: JSON.stringify({ error: "Failed to fetch customer analytics", message: error instanceof Error ? error.message : 'Unknown error' }, null, 2),
+            },
+          ],
         };
       }
     }
@@ -75,23 +100,30 @@ export function registerDashboardTools(server: McpServer) {
     },
     async () => {
       try {
-        const inventoryData = await fetch(
-          `${HOSTDATA_URL}/metrics/inventory-status`
-        );
-        const inventoryDataJson = await inventoryData.json();
+        logger.debug('Fetching inventory metrics');
+        const inventoryResponse = await externalApiService.getInventoryStatus();
+        
+        if (!inventoryResponse.success) {
+          throw new Error(inventoryResponse.error || 'Failed to fetch inventory metrics');
+        }
 
         return {
           content: [
             {
               type: "text",
-              text: JSON.stringify(inventoryDataJson, null, 2),
+              text: JSON.stringify(inventoryResponse.data, null, 2),
             },
           ],
         };
       } catch (error) {
-        console.error("Error fetching inventory data:", error);
+        logger.error("Error fetching inventory metrics", error instanceof Error ? error : new Error('Unknown error'));
         return {
-          content: [],
+          content: [
+            {
+              type: "text",
+              text: JSON.stringify({ error: "Failed to fetch inventory metrics", message: error instanceof Error ? error.message : 'Unknown error' }, null, 2),
+            },
+          ],
         };
       }
     }
