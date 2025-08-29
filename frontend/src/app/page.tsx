@@ -5,21 +5,21 @@ import {
   DashboardHeader,
   KPICards,
   SalesChart,
-  RevenueChart,
-  UserDemographicsChart,
-  UserEngagementChart,
-  PerformanceChart,
+  CustomerDistributionChart,
 } from "@/components/dashboard";
 
 export default function Dashboard() {
   const {
     salesMetricsData,
-    customersData,
+    customersMetricsData,
     dashboardMetricsData,
     itemsData,
     loading,
     error,
     refreshData,
+    currentPeriod,
+    loadingSalesMetrics,
+    changePeriod,
   } = useDashboardData();
 
   const kpiMetrics = {
@@ -41,12 +41,17 @@ export default function Dashboard() {
           {/* KPI Cards */}
           <KPICards metrics={kpiMetrics} />
 
-          {/* Sales Trends */}
-          <SalesChart data={salesMetricsData} />
+          {/* Sales Trends with Period Selector */}
+          <SalesChart
+            data={salesMetricsData}
+            currentPeriod={currentPeriod}
+            onPeriodChange={changePeriod}
+            loading={loadingSalesMetrics}
+          />
 
-          {/*         <UserDemographicsChart data={customersData || []} />
+          <CustomerDistributionChart data={customersMetricsData} />
 
-        <UserEngagementChart data={itemsData || []} /> */}
+          {/* <UserEngagementChart data={itemsData || []} /> */}
 
           {/* Performance Metrics */}
           {/* <PerformanceChart data={dashboardMetricsData} /> */}

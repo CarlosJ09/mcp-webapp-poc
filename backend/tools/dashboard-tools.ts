@@ -36,4 +36,34 @@ export function registerDashboardTools(server: McpServer) {
       }
     }
   );
+
+  server.registerTool(
+    "get-customers-metrics",
+    {
+      title: "Get Customers Metrics",
+      description: "Get customers metrics by period for dashboard",
+    },
+    async () => {
+      try {
+        const customersData = await fetch(
+          `${HOSTDATA_URL}/metrics/customer-analytics`
+        );
+        const customersDataJson = await customersData.json();
+
+        return {
+          content: [
+            {
+              type: "text",
+              text: JSON.stringify(customersDataJson, null, 2),
+            },
+          ],
+        };
+      } catch (error) {
+        console.error("Error fetching customers data:", error);
+        return {
+          content: [],
+        };
+      }
+    }
+  );
 }

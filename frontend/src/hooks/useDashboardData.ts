@@ -8,6 +8,7 @@ import {
   Item,
   Period,
   SalesMetrics,
+  CustomerMetrics,
 } from "@/types/dashboard";
 import {
   ReadResourceRequest,
@@ -18,6 +19,12 @@ export function useDashboardData() {
   const [state, setState] = useState<DashboardState>({
     salesData: [],
     customersData: [],
+    customersMetricsData: {
+      totalCustomers: 0,
+      newCustomersThisMonth: 0,
+      averageCustomerValue: null,
+      customerDistribution: [],
+    },
     dashboardMetricsData: {
       totalSales: 0,
       totalCustomers: 0,
@@ -36,6 +43,9 @@ export function useDashboardData() {
     error: null,
   });
 
+  const [currentPeriod, setCurrentPeriod] = useState<Period>(Period.MONTHLY);
+  const [loadingSalesMetrics, setLoadingSalesMetrics] = useState(false);
+
   const { readResourceData } = useMCPResource();
   const { executeTool } = useMCPTool();
   const { isConnected } = useMCPConnection();
@@ -43,6 +53,49 @@ export function useDashboardData() {
   const updateState = (updates: Partial<DashboardState>) => {
     setState((prev) => ({ ...prev, ...updates }));
   };
+
+  const loadSalesMetrics = useCallback(async (period: Period) => {
+    if (!isConnected) {
+      console.error("MCP client not connected");
+      return;
+    }
+
+    console.log(`Loading sales metrics for period: ${period}`);
+    setLoadingSalesMetrics(true);
+
+    try {
+      const salesMetricsRequest: CallToolRequest = {
+        params: {
+          name: "get-sales-metrics",
+          arguments: { period },
+        },
+        method: "tools/call",
+      };
+
+      const salesMetricsResult = await executeTool(salesMetricsRequest);
+      
+      if (salesMetricsResult?.content?.[0]?.text) {
+        const salesMetricsContent: SalesMetrics = JSON.parse(
+          salesMetricsResult.content[0].text
+        );
+        updateState({ salesMetricsData: salesMetricsContent });
+        console.log(`Sales metrics loaded for ${period}:`, salesMetricsContent);
+      }
+    } catch (err) {
+      console.error("Error loading sales metrics:", err);
+      updateState({
+        error: err instanceof Error ? err.message : "Failed to load sales metrics",
+      });
+    } finally {
+      setLoadingSalesMetrics(false);
+    }
+  }, [isConnected, executeTool]);
+
+  const changePeriod = useCallback((newPeriod: Period) => {
+    console.log(`Changing period from ${currentPeriod} to ${newPeriod}`);
+    setCurrentPeriod(newPeriod);
+    loadSalesMetrics(newPeriod);
+  }, [currentPeriod, loadSalesMetrics]);
 
   const loadDashboardData = useCallback(async () => {
     if (!isConnected) {
@@ -65,15 +118,22 @@ export function useDashboardData() {
         {
           params: {
             name: "get-sales-metrics",
-            arguments: { period: Period.MONTHLY },
+            arguments: { period: currentPeriod },
+          },
+          method: "tools/call",
+        },
+        {
+          params: {
+            name: "get-customers-metrics",
           },
           method: "tools/call",
         },
       ];
 
       console.log("Making parallel requests for tools...");
-      const [salesMetricsResult] = await Promise.all([
+      const [salesMetricsResult, customersMetricsResult] = await Promise.all([
         executeTool(toolsRequests[0]),
+        executeTool(toolsRequests[1]),
       ]);
 
       console.log("Sales metrics result:", salesMetricsResult);
@@ -105,6 +165,18 @@ export function useDashboardData() {
           console.log("Sales metrics processed:", salesMetricsContent);
         } catch (parseError) {
           console.error("Error parsing sales metrics data:", parseError);
+        }
+      }
+
+      if (customersMetricsResult?.content?.[0]?.text) {
+        try {
+          const customersMetricsContent: CustomerMetrics = JSON.parse(
+            customersMetricsResult.content[0].text
+          );
+          updates.customersMetricsData = customersMetricsContent;
+          console.log("Customers metrics processed:", customersMetricsContent);
+        } catch (parseError) {
+          console.error("Error parsing customers metrics data:", parseError);
         }
       }
 
@@ -165,7 +237,7 @@ export function useDashboardData() {
         loading: false,
       });
     }
-  }, [isConnected, readResourceData]);
+  }, [isConnected, readResourceData, currentPeriod, executeTool]);
 
   const refreshData = useCallback(async () => {
     if (!isConnected) {
@@ -214,6 +286,10 @@ export function useDashboardData() {
       }
 
       updateState({ ...updates, error: null, loading: false });
+      
+      // Also refresh sales metrics for current period
+      loadSalesMetrics(currentPeriod);
+      
       console.log("Dashboard data refresh completed");
     } catch (err) {
       console.error("Error refreshing dashboard data:", err);
@@ -222,7 +298,7 @@ export function useDashboardData() {
         loading: false,
       });
     }
-  }, [isConnected, readResourceData]);
+  }, [isConnected, readResourceData, loadSalesMetrics, currentPeriod]);
 
   // Initialize data when MCP connection is ready
   useEffect(() => {
@@ -234,7 +310,10 @@ export function useDashboardData() {
 
   return {
     ...state,
+    currentPeriod,
+    loadingSalesMetrics,
     refreshData,
+    changePeriod,
     isConnected,
   };
 }

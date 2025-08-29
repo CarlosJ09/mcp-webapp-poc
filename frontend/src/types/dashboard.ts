@@ -53,6 +53,13 @@ export interface Customer {
   created_at: string;
 }
 
+export interface CustomerMetrics {
+  totalCustomers: number;
+  newCustomersThisMonth: number;
+  averageCustomerValue: number | null;
+  customerDistribution: { range: string; count: number }[];
+}
+
 export interface Item {
   id: string;
   name: string;
@@ -102,6 +109,7 @@ export interface DashboardState {
   customersData: Customer[];
   dashboardMetricsData: DashboardMetricsData;
   salesMetricsData: SalesMetrics;
+  customersMetricsData: CustomerMetrics;
   itemsData: Item[];
   loading: boolean;
   error: string | null;
