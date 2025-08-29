@@ -1,20 +1,18 @@
 "use client";
 
 import { useDashboardData } from "@/hooks/useDashboardData";
-import {
-  DashboardHeader,
-  KPICards,
-  SalesChart,
-  CustomerDistributionChart,
-} from "@/components/dashboard";
+import { KPICards } from "@/components/dashboard/KPICards";
+import { SalesChart } from "@/components/dashboard/SalesChart";
+import { CustomerDistributionChart } from "@/components/dashboard/CustomerDistributionChart";
+import { InventoryChart } from "@/components/dashboard/InventoryChart";
+import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 
 export default function Dashboard() {
   const {
     salesMetricsData,
     customersMetricsData,
     dashboardMetricsData,
-    itemsData,
-    loading,
+    inventoryMetricsData,
     error,
     refreshData,
     currentPeriod,
@@ -29,8 +27,6 @@ export default function Dashboard() {
     totalRevenue: dashboardMetricsData?.totalRevenue ?? 0,
   };
 
-  console.log("dashboardMetricsData", dashboardMetricsData);
-
   return (
     <div className="min-h-screen bg-gray-100">
       <DashboardHeader error={error} onRefresh={refreshData} />
@@ -38,10 +34,8 @@ export default function Dashboard() {
       {/* Main Dashboard */}
       <main className="max-w-7xl mx-auto px-4 py-6">
         <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-          {/* KPI Cards */}
           <KPICards metrics={kpiMetrics} />
 
-          {/* Sales Trends with Period Selector */}
           <SalesChart
             data={salesMetricsData}
             currentPeriod={currentPeriod}
@@ -51,10 +45,7 @@ export default function Dashboard() {
 
           <CustomerDistributionChart data={customersMetricsData} />
 
-          {/* <UserEngagementChart data={itemsData || []} /> */}
-
-          {/* Performance Metrics */}
-          {/* <PerformanceChart data={dashboardMetricsData} /> */}
+          <InventoryChart data={inventoryMetricsData} />
         </div>
       </main>
     </div>

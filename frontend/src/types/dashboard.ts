@@ -68,6 +68,19 @@ export interface Item {
   created_at: string;
 }
 
+export interface InventoryMetricsData {
+  totalItems: number;
+  lowStockItems: number;
+  outOfStockItems: number;
+  totalInventoryValue: number;
+  lowStockList: {
+    id: string;
+    name: string;
+    stock: number;
+    price: number;
+  }[];
+}
+
 export interface DashboardMetricsData {
   totalSales: number;
   totalRevenue?: number;
@@ -110,6 +123,7 @@ export interface DashboardState {
   dashboardMetricsData: DashboardMetricsData;
   salesMetricsData: SalesMetrics;
   customersMetricsData: CustomerMetrics;
+  inventoryMetricsData: InventoryMetricsData;
   itemsData: Item[];
   loading: boolean;
   error: string | null;

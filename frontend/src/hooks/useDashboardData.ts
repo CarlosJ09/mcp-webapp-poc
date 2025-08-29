@@ -9,6 +9,7 @@ import {
   Period,
   SalesMetrics,
   CustomerMetrics,
+  InventoryMetricsData,
 } from "@/types/dashboard";
 import {
   ReadResourceRequest,
@@ -38,6 +39,13 @@ export function useDashboardData() {
       totalRevenue: null,
       salesByPeriod: [],
     },
+    inventoryMetricsData: {
+      totalItems: 0,
+      lowStockItems: 0,
+      outOfStockItems: 0,
+      totalInventoryValue: 0,
+      lowStockList: [],
+    },
     itemsData: [],
     loading: true,
     error: null,
@@ -54,48 +62,58 @@ export function useDashboardData() {
     setState((prev) => ({ ...prev, ...updates }));
   };
 
-  const loadSalesMetrics = useCallback(async (period: Period) => {
-    if (!isConnected) {
-      console.error("MCP client not connected");
-      return;
-    }
-
-    console.log(`Loading sales metrics for period: ${period}`);
-    setLoadingSalesMetrics(true);
-
-    try {
-      const salesMetricsRequest: CallToolRequest = {
-        params: {
-          name: "get-sales-metrics",
-          arguments: { period },
-        },
-        method: "tools/call",
-      };
-
-      const salesMetricsResult = await executeTool(salesMetricsRequest);
-      
-      if (salesMetricsResult?.content?.[0]?.text) {
-        const salesMetricsContent: SalesMetrics = JSON.parse(
-          salesMetricsResult.content[0].text
-        );
-        updateState({ salesMetricsData: salesMetricsContent });
-        console.log(`Sales metrics loaded for ${period}:`, salesMetricsContent);
+  const loadSalesMetrics = useCallback(
+    async (period: Period) => {
+      if (!isConnected) {
+        console.error("MCP client not connected");
+        return;
       }
-    } catch (err) {
-      console.error("Error loading sales metrics:", err);
-      updateState({
-        error: err instanceof Error ? err.message : "Failed to load sales metrics",
-      });
-    } finally {
-      setLoadingSalesMetrics(false);
-    }
-  }, [isConnected, executeTool]);
 
-  const changePeriod = useCallback((newPeriod: Period) => {
-    console.log(`Changing period from ${currentPeriod} to ${newPeriod}`);
-    setCurrentPeriod(newPeriod);
-    loadSalesMetrics(newPeriod);
-  }, [currentPeriod, loadSalesMetrics]);
+      console.log(`Loading sales metrics for period: ${period}`);
+      setLoadingSalesMetrics(true);
+
+      try {
+        const salesMetricsRequest: CallToolRequest = {
+          params: {
+            name: "get-sales-metrics",
+            arguments: { period },
+          },
+          method: "tools/call",
+        };
+
+        const salesMetricsResult = await executeTool(salesMetricsRequest);
+
+        if (salesMetricsResult?.content?.[0]?.text) {
+          const salesMetricsContent: SalesMetrics = JSON.parse(
+            salesMetricsResult.content[0].text
+          );
+          updateState({ salesMetricsData: salesMetricsContent });
+          console.log(
+            `Sales metrics loaded for ${period}:`,
+            salesMetricsContent
+          );
+        }
+      } catch (err) {
+        console.error("Error loading sales metrics:", err);
+        updateState({
+          error:
+            err instanceof Error ? err.message : "Failed to load sales metrics",
+        });
+      } finally {
+        setLoadingSalesMetrics(false);
+      }
+    },
+    [isConnected, executeTool]
+  );
+
+  const changePeriod = useCallback(
+    (newPeriod: Period) => {
+      console.log(`Changing period from ${currentPeriod} to ${newPeriod}`);
+      setCurrentPeriod(newPeriod);
+      loadSalesMetrics(newPeriod);
+    },
+    [currentPeriod, loadSalesMetrics]
+  );
 
   const loadDashboardData = useCallback(async () => {
     if (!isConnected) {
@@ -128,12 +146,23 @@ export function useDashboardData() {
           },
           method: "tools/call",
         },
+        {
+          params: {
+            name: "get-inventory-metrics",
+          },
+          method: "tools/call",
+        },
       ];
 
       console.log("Making parallel requests for tools...");
-      const [salesMetricsResult, customersMetricsResult] = await Promise.all([
+      const [
+        salesMetricsResult,
+        customersMetricsResult,
+        inventoryMetricsResult,
+      ] = await Promise.all([
         executeTool(toolsRequests[0]),
         executeTool(toolsRequests[1]),
+        executeTool(toolsRequests[2]),
       ]);
 
       console.log("Sales metrics result:", salesMetricsResult);
@@ -177,6 +206,18 @@ export function useDashboardData() {
           console.log("Customers metrics processed:", customersMetricsContent);
         } catch (parseError) {
           console.error("Error parsing customers metrics data:", parseError);
+        }
+      }
+
+      if (inventoryMetricsResult?.content?.[0]?.text) {
+        try {
+          const inventoryMetricsContent: InventoryMetricsData = JSON.parse(
+            inventoryMetricsResult.content[0].text
+          );
+          updates.inventoryMetricsData = inventoryMetricsContent;
+          console.log("Inventory metrics processed:", inventoryMetricsContent);
+        } catch (parseError) {
+          console.error("Error parsing inventory metrics data:", parseError);
         }
       }
 
@@ -246,59 +287,8 @@ export function useDashboardData() {
     }
 
     console.log("Refreshing dashboard data...");
-    updateState({ loading: true, error: null });
-
-    try {
-      const resourceRequests: ReadResourceRequest[] = [
-        { params: { uri: "sales://all" }, method: "resources/read" },
-        { params: { uri: "customers://all" }, method: "resources/read" },
-        { params: { uri: "metrics://dashboard" }, method: "resources/read" },
-        { params: { uri: "items://all" }, method: "resources/read" },
-      ];
-
-      const [
-        salesResult,
-        customersResult,
-        dashboardMetricsResult,
-        itemsResult,
-      ] = await Promise.all([
-        readResourceData(resourceRequests[0]),
-        readResourceData(resourceRequests[1]),
-        readResourceData(resourceRequests[2]),
-        readResourceData(resourceRequests[3]),
-      ]);
-
-      const updates: Partial<DashboardState> = {};
-
-      if (salesResult?.contents?.[0]?.text) {
-        updates.salesData = JSON.parse(salesResult.contents[0].text);
-      }
-      if (customersResult?.contents?.[0]?.text) {
-        updates.customersData = JSON.parse(customersResult.contents[0].text);
-      }
-      if (dashboardMetricsResult?.contents?.[0]?.text) {
-        updates.dashboardMetricsData = JSON.parse(
-          dashboardMetricsResult.contents[0].text
-        );
-      }
-      if (itemsResult?.contents?.[0]?.text) {
-        updates.itemsData = JSON.parse(itemsResult.contents[0].text);
-      }
-
-      updateState({ ...updates, error: null, loading: false });
-      
-      // Also refresh sales metrics for current period
-      loadSalesMetrics(currentPeriod);
-      
-      console.log("Dashboard data refresh completed");
-    } catch (err) {
-      console.error("Error refreshing dashboard data:", err);
-      updateState({
-        error: err instanceof Error ? err.message : "Failed to refresh data",
-        loading: false,
-      });
-    }
-  }, [isConnected, readResourceData, loadSalesMetrics, currentPeriod]);
+    await loadDashboardData();
+  }, [isConnected, loadDashboardData]);
 
   // Initialize data when MCP connection is ready
   useEffect(() => {
