@@ -1,8 +1,8 @@
 import { randomUUID } from "node:crypto";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
-import { registerDashboardResources } from "../resources/dashboard-resources.ts";
-import { registerDashboardTools } from "../tools/dashboard-tools.ts";
+import { registerDashboardResources } from "../resources/dashboard-resources";
+import { registerDashboardTools } from "../tools/dashboard-tools";
 
 // Map to store transports by session ID
 const transports: { [sessionId: string]: StreamableHTTPServerTransport } = {};

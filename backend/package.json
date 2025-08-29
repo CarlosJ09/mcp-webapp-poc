@@ -9,6 +9,8 @@
   "scripts": {
     "start": "tsx watch index.ts",
     "start:stdio": "tsx watch stdio-mcp-server.ts",
+    "build": "tsc",
+    "build:watch": "tsc --watch",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "dependencies": {

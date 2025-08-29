@@ -5,7 +5,7 @@ import {
   createTransport, 
   getTransport, 
   getAvailableTransports 
-} from "../services/mcp-server.ts";
+} from "../services/mcp-server";
 
 const router = express.Router();
 

@@ -1,6 +1,6 @@
 import express from "express";
-import { corsConfig, devCorsConfig } from "./config/cors.ts";
-import mcpRoutes from "./routes/mcp-routes.ts";
+import { corsConfig, devCorsConfig } from "./config/cors";
+import mcpRoutes from "./routes/mcp-routes";
 
 const app = express();
 const PORT = 3000;
