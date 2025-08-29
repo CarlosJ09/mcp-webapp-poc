@@ -4,20 +4,24 @@
   "description": "",
   "license": "ISC",
   "author": "",
-  "type": "module",
   "main": "index.js",
   "scripts": {
     "start": "tsx watch index.ts",
     "start:stdio": "tsx watch stdio-mcp-server.ts",
     "build": "tsc",
     "build:watch": "tsc --watch",
+    "start:prod": "node dist/index.js",
+    "start:stdio:prod": "node dist/stdio-mcp-server.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.17.4",
     "@types/cors": "^2.8.19",
+    "@types/dotenv": "^6.1.1",
     "cors": "^2.8.5",
-    "express": "^5.1.0"
+    "dotenv": "^17.2.1",
+    "express": "^5.1.0",
+    "express-rate-limit": "^8.0.1"
   },
   "devDependencies": {
     "@types/express": "^5.0.3",
