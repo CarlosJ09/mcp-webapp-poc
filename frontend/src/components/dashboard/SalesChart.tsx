@@ -3,7 +3,7 @@
  * Displays sales, revenue, and profit trends over time
  */
 
-import { TrendingUp } from 'lucide-react';
+import { TrendingUp } from "lucide-react";
 import {
   LineChart,
   Line,
@@ -13,18 +13,20 @@ import {
   Tooltip,
   Legend,
   ResponsiveContainer,
-} from 'recharts';
-import type { Sale } from '@/types/dashboard';
+} from "recharts";
+import type { SalesMetrics } from "@/types/dashboard";
 
 interface SalesChartProps {
-  data: Sale[];
+  data: SalesMetrics;
 }
 
 export function SalesChart({ data }: SalesChartProps) {
-  const formatTooltip = (value: number) => [
-    `$${value.toLocaleString()}`,
-    "",
-  ];
+  const formatTooltip = (value: number) => [`$${value.toLocaleString()}`, ""];
+
+  const chartData = data.salesByPeriod.map((item) => ({
+    ...item,
+    profit: item.revenue ? item.revenue * 0.2 : 0, // 20% profit margin
+  }));
 
   return (
     <div className="lg:col-span-2 bg-white rounded-xl shadow-lg p-6">
@@ -33,15 +35,15 @@ export function SalesChart({ data }: SalesChartProps) {
         Sales & Revenue Trends
       </h2>
       <ResponsiveContainer width="100%" height={300}>
-        <LineChart data={data}>
+        <LineChart data={chartData}>
           <CartesianGrid strokeDasharray="3 3" />
-          <XAxis dataKey="month" />
+          <XAxis dataKey="period" />
           <YAxis />
           <Tooltip formatter={formatTooltip} />
           <Legend />
           <Line
             type="monotone"
-            dataKey="sales"
+            dataKey="salesCount"
             stroke="#8884d8"
             strokeWidth={3}
             name="Sales"

@@ -1,6 +1,6 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 
-const HOSTDATA_URL = "http://54.237.248.12";
+const HOSTDATA_URL = "http://13.220.233.0";
 
 export function registerDashboardResources(server: McpServer) {
   // Sales data resource
@@ -65,7 +65,7 @@ export function registerDashboardResources(server: McpServer) {
     }
   );
 
-  // Performance metrics resource
+  // Metrics resource
   server.registerResource(
     "dashboard-metrics",
     "metrics://dashboard",

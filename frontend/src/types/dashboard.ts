@@ -3,6 +3,12 @@
  * Centralized type definitions for better maintainability
  */
 
+export enum Period {
+  MONTHLY = "monthly",
+  WEEKLY = "weekly",
+  DAILY = "daily",
+}
+
 export interface Sale {
   id: string;
   customer_id: string;
@@ -20,6 +26,17 @@ export interface SaleDetail {
   quantity: string;
   price: number;
   item: { name: string };
+}
+
+export interface SalesMetrics {
+  period: Period;
+  totalSales: number;
+  totalRevenue: number | null;
+  salesByPeriod: {
+    period: string; // YYYY-MM
+    salesCount: number;
+    revenue: number | null;
+  }[];
 }
 
 export interface Payment {
@@ -83,7 +100,8 @@ export interface KPIMetrics {
 export interface DashboardState {
   salesData: Sale[];
   customersData: Customer[];
-  dashboardMetricsData: DashboardMetricsData[];
+  dashboardMetricsData: DashboardMetricsData;
+  salesMetricsData: SalesMetrics;
   itemsData: Item[];
   loading: boolean;
   error: string | null;

@@ -1,25 +1,43 @@
 import { useState, useEffect, useCallback } from "react";
-import { useMCPResource, useMCPConnection } from "@/hooks/useMCP";
-import type {
+import { useMCPResource, useMCPConnection, useMCPTool } from "@/hooks/useMCP";
+import {
   DashboardState,
   Sale,
   Customer,
   DashboardMetricsData,
   Item,
+  Period,
+  SalesMetrics,
 } from "@/types/dashboard";
-import type { ReadResourceRequest } from "@modelcontextprotocol/sdk/types.js";
+import {
+  ReadResourceRequest,
+  CallToolRequest,
+} from "@modelcontextprotocol/sdk/types.js";
 
 export function useDashboardData() {
   const [state, setState] = useState<DashboardState>({
     salesData: [],
     customersData: [],
-    dashboardMetricsData: [],
+    dashboardMetricsData: {
+      totalSales: 0,
+      totalCustomers: 0,
+      totalItems: 0,
+      topSellingItems: [],
+      topCustomers: [],
+    },
+    salesMetricsData: {
+      period: Period.MONTHLY,
+      totalSales: 0,
+      totalRevenue: null,
+      salesByPeriod: [],
+    },
     itemsData: [],
     loading: true,
     error: null,
   });
 
   const { readResourceData } = useMCPResource();
+  const { executeTool } = useMCPTool();
   const { isConnected } = useMCPConnection();
 
   const updateState = (updates: Partial<DashboardState>) => {
@@ -36,7 +54,6 @@ export function useDashboardData() {
     updateState({ loading: true, error: null });
 
     try {
-      // Fix: Use correct request format - parameters directly, not wrapped
       const resourceRequests: ReadResourceRequest[] = [
         { params: { uri: "sales://all" }, method: "resources/read" },
         { params: { uri: "customers://all" }, method: "resources/read" },
@@ -44,6 +61,22 @@ export function useDashboardData() {
         { params: { uri: "items://all" }, method: "resources/read" },
       ];
 
+      const toolsRequests: CallToolRequest[] = [
+        {
+          params: {
+            name: "get-sales-metrics",
+            arguments: { period: Period.MONTHLY },
+          },
+          method: "tools/call",
+        },
+      ];
+
+      console.log("Making parallel requests for tools...");
+      const [salesMetricsResult] = await Promise.all([
+        executeTool(toolsRequests[0]),
+      ]);
+
+      console.log("Sales metrics result:", salesMetricsResult);
       // Load all dashboard data in parallel
       console.log("Making parallel requests for resources...");
       const [
@@ -62,6 +95,18 @@ export function useDashboardData() {
 
       // Process and update data
       const updates: Partial<DashboardState> = {};
+
+      if (salesMetricsResult?.content?.[0]?.text) {
+        try {
+          const salesMetricsContent: SalesMetrics = JSON.parse(
+            salesMetricsResult.content[0].text
+          );
+          updates.salesMetricsData = salesMetricsContent;
+          console.log("Sales metrics processed:", salesMetricsContent);
+        } catch (parseError) {
+          console.error("Error parsing sales metrics data:", parseError);
+        }
+      }
 
       if (salesResult?.contents?.[0]?.text) {
         try {
@@ -91,15 +136,11 @@ export function useDashboardData() {
 
       if (dashboardMetricsResult?.contents?.[0]?.text) {
         try {
-          const dashboardMetricsContent: DashboardMetricsData[] = JSON.parse(
+          const dashboardMetricsContent: DashboardMetricsData = JSON.parse(
             dashboardMetricsResult.contents[0].text
           );
           updates.dashboardMetricsData = dashboardMetricsContent;
-          console.log(
-            "Dashboard metrics processed:",
-            dashboardMetricsContent.length,
-            "items"
-          );
+          console.log("Dashboard metrics processed:", dashboardMetricsContent);
         } catch (parseError) {
           console.error("Error parsing dashboard metrics data:", parseError);
         }
@@ -136,7 +177,6 @@ export function useDashboardData() {
     updateState({ loading: true, error: null });
 
     try {
-      // Fix: Use correct request format
       const resourceRequests: ReadResourceRequest[] = [
         { params: { uri: "sales://all" }, method: "resources/read" },
         { params: { uri: "customers://all" }, method: "resources/read" },

@@ -50,15 +50,13 @@ export function MCPProvider({ children }: { children: React.ReactNode }) {
     useState<ConnectionState>("disconnected");
   const [error, setError] = useState<string>();
 
-  // Use refs to prevent effect dependencies issues
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const isUnmountedRef = useRef(false);
   const clientRef = useRef<Client | undefined>(undefined);
 
-  // Stable reference to prevent infinite re-renders
   const connectClient = useCallback(async () => {
     console.log("connectClient called, current state:", connectionState);
-    
+
     if (connectionState === "connecting") {
       console.log("Already connecting, skipping");
       return;
@@ -87,7 +85,6 @@ export function MCPProvider({ children }: { children: React.ReactNode }) {
       setConnectionState("connected");
       console.log("Client connected to MCP server");
 
-      // Fetch initial data
       try {
         console.log("Fetching tools and resources...");
         const [toolsResult, resourcesResult] = await Promise.all([
@@ -131,7 +128,7 @@ export function MCPProvider({ children }: { children: React.ReactNode }) {
 
   const reconnect = useCallback(async () => {
     console.log("Manual reconnect triggered");
-    
+
     if (reconnectTimeoutRef.current) {
       clearTimeout(reconnectTimeoutRef.current);
       reconnectTimeoutRef.current = null;
@@ -151,7 +148,7 @@ export function MCPProvider({ children }: { children: React.ReactNode }) {
     clientRef.current = undefined;
     setClient(undefined);
     setConnectionState("disconnected");
-    
+
     // Small delay to ensure state is updated
     setTimeout(() => {
       connectClient();
@@ -165,7 +162,7 @@ export function MCPProvider({ children }: { children: React.ReactNode }) {
       if (!currentClient || connectionState !== "connected") {
         throw new Error("MCP client not connected");
       }
-      
+
       console.log("Calling tool:", request);
       return await currentClient.callTool(request.params);
     },
@@ -178,7 +175,7 @@ export function MCPProvider({ children }: { children: React.ReactNode }) {
       if (!currentClient || connectionState !== "connected") {
         throw new Error("MCP client not connected");
       }
-      
+
       console.log("Reading resource:", request);
       return await currentClient.readResource(request.params);
     },
@@ -189,7 +186,7 @@ export function MCPProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     console.log("MCPProvider useEffect triggered");
     isUnmountedRef.current = false;
-    
+
     // Only connect if we're not already connected or connecting
     if (connectionState === "disconnected") {
       connectClient();
@@ -198,12 +195,12 @@ export function MCPProvider({ children }: { children: React.ReactNode }) {
     return () => {
       console.log("MCPProvider cleanup");
       isUnmountedRef.current = true;
-      
+
       if (reconnectTimeoutRef.current) {
         clearTimeout(reconnectTimeoutRef.current);
         reconnectTimeoutRef.current = null;
       }
-      
+
       const currentClient = clientRef.current;
       if (currentClient) {
         currentClient.close().catch(console.error);
