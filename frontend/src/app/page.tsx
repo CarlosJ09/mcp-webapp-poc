@@ -45,7 +45,9 @@ export default function Dashboard() {
 
           <CustomerDistributionChart data={customersMetricsData} />
 
-          <InventoryChart data={inventoryMetricsData} />
+          <div className="lg:col-span-2">
+            <InventoryChart data={inventoryMetricsData} />
+          </div>
         </div>
       </main>
     </div>
