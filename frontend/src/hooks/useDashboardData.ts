@@ -32,9 +32,11 @@ export function useDashboardData() {
       return;
     }
 
+    console.log("Loading dashboard data...");
     updateState({ loading: true, error: null });
 
     try {
+      // Fix: Use correct request format - parameters directly, not wrapped
       const resourceRequests: ReadResourceRequest[] = [
         { params: { uri: "sales://all" }, method: "resources/read" },
         { params: { uri: "customers://all" }, method: "resources/read" },
@@ -43,6 +45,7 @@ export function useDashboardData() {
       ];
 
       // Load all dashboard data in parallel
+      console.log("Making parallel requests for resources...");
       const [
         salesResult,
         customersResult,
@@ -55,6 +58,8 @@ export function useDashboardData() {
         readResourceData(resourceRequests[3]),
       ]);
 
+      console.log("All resources loaded, processing data...");
+
       // Process and update data
       const updates: Partial<DashboardState> = {};
 
@@ -62,6 +67,7 @@ export function useDashboardData() {
         try {
           const salesContent: Sale[] = JSON.parse(salesResult.contents[0].text);
           updates.salesData = salesContent;
+          console.log("Sales data processed:", salesContent.length, "items");
         } catch (parseError) {
           console.error("Error parsing sales data:", parseError);
         }
@@ -73,6 +79,11 @@ export function useDashboardData() {
             customersResult.contents[0].text
           );
           updates.customersData = customersContent;
+          console.log(
+            "Customers data processed:",
+            customersContent.length,
+            "items"
+          );
         } catch (parseError) {
           console.error("Error parsing customers data:", parseError);
         }
@@ -84,6 +95,11 @@ export function useDashboardData() {
             dashboardMetricsResult.contents[0].text
           );
           updates.dashboardMetricsData = dashboardMetricsContent;
+          console.log(
+            "Dashboard metrics processed:",
+            dashboardMetricsContent.length,
+            "items"
+          );
         } catch (parseError) {
           console.error("Error parsing dashboard metrics data:", parseError);
         }
@@ -93,12 +109,14 @@ export function useDashboardData() {
         try {
           const itemsContent: Item[] = JSON.parse(itemsResult.contents[0].text);
           updates.itemsData = itemsContent;
+          console.log("Items data processed:", itemsContent.length, "items");
         } catch (parseError) {
           console.error("Error parsing items data:", parseError);
         }
       }
 
       updateState({ ...updates, error: null, loading: false });
+      console.log("Dashboard data loading completed successfully");
     } catch (err) {
       console.error("Error loading dashboard data:", err);
       updateState({
@@ -114,9 +132,11 @@ export function useDashboardData() {
       return;
     }
 
+    console.log("Refreshing dashboard data...");
     updateState({ loading: true, error: null });
 
     try {
+      // Fix: Use correct request format
       const resourceRequests: ReadResourceRequest[] = [
         { params: { uri: "sales://all" }, method: "resources/read" },
         { params: { uri: "customers://all" }, method: "resources/read" },
@@ -154,6 +174,7 @@ export function useDashboardData() {
       }
 
       updateState({ ...updates, error: null, loading: false });
+      console.log("Dashboard data refresh completed");
     } catch (err) {
       console.error("Error refreshing dashboard data:", err);
       updateState({
@@ -165,6 +186,7 @@ export function useDashboardData() {
 
   // Initialize data when MCP connection is ready
   useEffect(() => {
+    console.log("useDashboardData effect - isConnected:", isConnected);
     if (isConnected) {
       loadDashboardData();
     }

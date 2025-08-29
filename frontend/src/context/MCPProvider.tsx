@@ -53,9 +53,16 @@ export function MCPProvider({ children }: { children: React.ReactNode }) {
   // Use refs to prevent effect dependencies issues
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const isUnmountedRef = useRef(false);
+  const clientRef = useRef<Client | undefined>(undefined);
 
+  // Stable reference to prevent infinite re-renders
   const connectClient = useCallback(async () => {
-    if (connectionState === "connecting") return;
+    console.log("connectClient called, current state:", connectionState);
+    
+    if (connectionState === "connecting") {
+      console.log("Already connecting, skipping");
+      return;
+    }
 
     setConnectionState("connecting");
     setError(undefined);
@@ -66,16 +73,23 @@ export function MCPProvider({ children }: { children: React.ReactNode }) {
       const transport = new StreamableHTTPClientTransport(new URL(serverUrl));
       const newClient = new Client(MCP_CLIENT_OPTIONS);
 
+      console.log("Attempting to connect to:", serverUrl);
       await newClient.connect(transport);
 
-      if (isUnmountedRef.current) return;
+      if (isUnmountedRef.current) {
+        console.log("Component unmounted, aborting connection");
+        await newClient.close();
+        return;
+      }
 
+      clientRef.current = newClient;
       setClient(newClient);
       setConnectionState("connected");
       console.log("Client connected to MCP server");
 
       // Fetch initial data
       try {
+        console.log("Fetching tools and resources...");
         const [toolsResult, resourcesResult] = await Promise.all([
           newClient.listTools(),
           newClient.listResources(),
@@ -84,7 +98,10 @@ export function MCPProvider({ children }: { children: React.ReactNode }) {
         if (!isUnmountedRef.current) {
           setTools(toolsResult);
           setResources(resourcesResult);
-          console.log("Tools and resources fetched successfully");
+          console.log("Tools and resources fetched successfully", {
+            tools: toolsResult.tools.length,
+            resources: resourcesResult.resources.length,
+          });
         }
       } catch (fetchError) {
         console.error("Error fetching tools/resources:", fetchError);
@@ -101,68 +118,99 @@ export function MCPProvider({ children }: { children: React.ReactNode }) {
         );
 
         // Auto-retry connection after 5 seconds
+        console.log("Scheduling reconnection in 5 seconds...");
         reconnectTimeoutRef.current = setTimeout(() => {
-          if (!isUnmountedRef.current) {
+          if (!isUnmountedRef.current && connectionState !== "connected") {
+            console.log("Auto-retrying connection...");
             connectClient();
           }
         }, 5000);
       }
     }
-  }, []);
+  }, [connectionState]); // Only depend on connectionState
 
   const reconnect = useCallback(async () => {
+    console.log("Manual reconnect triggered");
+    
     if (reconnectTimeoutRef.current) {
       clearTimeout(reconnectTimeoutRef.current);
+      reconnectTimeoutRef.current = null;
     }
 
     // Close existing client if any
-    if (client) {
+    const currentClient = clientRef.current;
+    if (currentClient) {
       try {
-        await client.close();
+        await currentClient.close();
+        console.log("Existing client closed");
       } catch (e) {
         console.warn("Error closing existing client:", e);
       }
     }
 
+    clientRef.current = undefined;
     setClient(undefined);
     setConnectionState("disconnected");
-    await connectClient();
-  }, [client, connectClient]);
+    
+    // Small delay to ensure state is updated
+    setTimeout(() => {
+      connectClient();
+    }, 100);
+  }, [connectClient]);
 
+  // Fix: Pass parameters directly to client methods, not wrapped in params
   const callTool = useCallback(
     async (request: CallToolRequest) => {
-      if (!client || connectionState !== "connected") {
+      const currentClient = clientRef.current;
+      if (!currentClient || connectionState !== "connected") {
         throw new Error("MCP client not connected");
       }
-      return await client.callTool(request.params);
+      
+      console.log("Calling tool:", request);
+      return await currentClient.callTool(request.params);
     },
-    [client, connectionState]
+    [connectionState]
   );
 
   const readResource = useCallback(
     async (request: ReadResourceRequest) => {
-      if (!client || connectionState !== "connected") {
+      const currentClient = clientRef.current;
+      if (!currentClient || connectionState !== "connected") {
         throw new Error("MCP client not connected");
       }
-      return await client.readResource(request.params);
+      
+      console.log("Reading resource:", request);
+      return await currentClient.readResource(request.params);
     },
-    [client, connectionState]
+    [connectionState]
   );
 
+  // Initialize connection only once
   useEffect(() => {
+    console.log("MCPProvider useEffect triggered");
     isUnmountedRef.current = false;
-    connectClient();
+    
+    // Only connect if we're not already connected or connecting
+    if (connectionState === "disconnected") {
+      connectClient();
+    }
 
     return () => {
+      console.log("MCPProvider cleanup");
       isUnmountedRef.current = true;
+      
       if (reconnectTimeoutRef.current) {
         clearTimeout(reconnectTimeoutRef.current);
+        reconnectTimeoutRef.current = null;
       }
-      if (client) {
-        client.close().catch(console.error);
+      
+      const currentClient = clientRef.current;
+      if (currentClient) {
+        currentClient.close().catch(console.error);
+        clientRef.current = undefined;
       }
     };
-  }, [connectClient, client]);
+  }, []); // Empty dependency array - only run once on mount
 
   const contextValue: MCPContextType = {
     client,
