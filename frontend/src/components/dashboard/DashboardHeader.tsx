@@ -3,7 +3,10 @@
  * Displays the dashboard title, refresh button, and connection status
  */
 
-import { BarChart3, RefreshCw, CheckCircle, AlertCircle } from 'lucide-react';
+import { BarChart3, RefreshCw, CheckCircle, AlertCircle } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
+import LoginControls from "../ui/LoginControls";
+import ProfileMenu from "../ui/ProfileMenu";
 
 interface DashboardHeaderProps {
   error: string | null;
@@ -11,6 +14,8 @@ interface DashboardHeaderProps {
 }
 
 export function DashboardHeader({ error, onRefresh }: DashboardHeaderProps) {
+  // Remove false property when Auth0 is fully integrated, see useAuth hook for details
+  const { user } = useAuth(false);
   return (
     <header className="bg-white shadow-sm">
       <div className="max-w-7xl mx-auto px-4 py-4">
@@ -20,6 +25,7 @@ export function DashboardHeader({ error, onRefresh }: DashboardHeaderProps) {
             MCP Analytics Dashboard
           </h1>
           <div className="flex gap-3">
+            {!user ? <LoginControls /> : <ProfileMenu user={user} />}
             <button
               onClick={onRefresh}
               className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
