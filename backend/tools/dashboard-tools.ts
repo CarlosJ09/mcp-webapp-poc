@@ -1,7 +1,7 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 
-const HOSTDATA_URL = "http://13.220.233.0";
+const HOSTDATA_URL = "https://server-api-thryv.onrender.com";
 
 export function registerDashboardTools(server: McpServer) {
   server.registerTool(
