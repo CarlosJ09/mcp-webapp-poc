@@ -1,37 +1,5 @@
 /**
- * @fileoverview Dash      try {
-        logger.debug('Fetching sales data');
-        const salesResponse = await externalApiService.getSalesData();
-        
-        if (!salesResponse.success) {
-          throw new Error(salesResponse.error || 'Failed to fetch sales data');
-        }
-        
-        logger.debug('Sales data fetched successfully', { 
-          recordCount: Array.isArray(salesResponse.data) ? salesResponse.data.length : 'unknown' 
-        });
-
-        return {
-          contents: [
-            {
-              uri: "sales://monthly",
-              mimeType: "application/json",
-              text: JSON.stringify(salesResponse.data, null, 2),
-            },
-          ],
-        };
-      } catch (error) {
-        logger.error("Error fetching sales data", error instanceof Error ? error : new Error('Unknown error'));
-        return {
-          contents: [
-            {
-              uri: "sales://monthly",
-              mimeType: "application/json",
-              text: JSON.stringify({ error: "Failed to fetch sales data", message: error instanceof Error ? error.message : 'Unknown error' }, null, 2),
-            },
-          ],
-        };
-      } MCP WebApp backend
+ * @fileoverview Dashboard resources for MCP WebApp backend
  * Provides data resources for dashboard charts and analytics
  */
 
@@ -47,7 +15,6 @@ const logger = createLogger('Dashboard-Resources');
  */
 export function registerDashboardResources(server: McpServer): void {
   // Sales data resource
-  // General sales data resource
   server.registerResource(
     "sales-data",
     "sales://all",
