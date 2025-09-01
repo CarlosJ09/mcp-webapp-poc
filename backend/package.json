@@ -4,14 +4,14 @@
   "description": "",
   "license": "ISC",
   "author": "",
-  "main": "index.js",
+  "main": "src/main/index.js",
   "scripts": {
-    "start": "tsx watch index.ts",
-    "start:stdio": "tsx watch stdio-mcp-server.ts",
+    "start": "tsx watch src/main/index.ts",
+    "start:stdio": "tsx watch src/main/stdio-mcp-server.ts",
     "build": "tsc",
     "build:watch": "tsc --watch",
-    "start:prod": "node dist/index.js",
-    "start:stdio:prod": "node dist/stdio-mcp-server.js",
+    "start:prod": "node dist/src/main/index.js",
+    "start:stdio:prod": "node dist/src/main/stdio-mcp-server.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "dependencies": {

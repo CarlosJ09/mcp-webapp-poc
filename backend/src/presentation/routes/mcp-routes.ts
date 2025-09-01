@@ -5,8 +5,8 @@ import {
   createTransport, 
   getTransport, 
   getAvailableTransports 
-} from "../services/mcp-server";
-import { createLogger } from "../config/logger";
+} from "../../infrastructure/transport/mcp-server";
+import { createLogger } from "../../shared/config/logger";
 
 const router = express.Router();
 const logger = createLogger('MCP-Routes');

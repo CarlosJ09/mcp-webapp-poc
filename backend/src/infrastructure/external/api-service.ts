@@ -4,8 +4,8 @@
  */
 
 import * as https from 'https';
-import { config } from '../../config/app';
-import { createLogger } from '../../config/logger';
+import { config } from '../../shared/config/app';
+import { createLogger } from '../../shared/config/logger';
 
 const logger = createLogger('External-API');
 
