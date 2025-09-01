@@ -1,34 +1,44 @@
 import { randomUUID } from "node:crypto";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
-import { registerDashboardResources } from "../resources/dashboard-resources";
-import { registerDashboardTools } from "../tools/dashboard-tools";
-import { createLogger } from "../config/logger";
+import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+import { registerDashboardResources } from "../src/application/services/dashboard-resources.js";
+import { registerDashboardTools } from "../src/application/services/dashboard-tools.js";
+import { createLogger } from "../src/shared/config/logger.js";
 
 const logger = createLogger('MCP-Server-Service');
 
-// Map to store transports by session ID
+// Map to store HTTP transports by session ID
 const transports: { [sessionId: string]: StreamableHTTPServerTransport } = {};
+
+export type TransportType = 'http' | 'stdio';
 
 export function createMCPServer(): McpServer {
   const server = new McpServer({
-    name: "example-server",
+    name: "dashboard-mcp-server",
     version: "1.0.0",
   });
 
-  // Register all dashboard resources and tools
+  // Register all dashboard resources and tools using SOLID architecture
   registerDashboardResources(server);
   registerDashboardTools(server);
 
   return server;
 }
 
-export function createTransport(): StreamableHTTPServerTransport {
+export function createTransport(type: TransportType = 'http'): StreamableHTTPServerTransport | StdioServerTransport {
+  if (type === 'stdio') {
+    logger.info('Creating Stdio transport');
+    return new StdioServerTransport();
+  }
+
+  // Default to HTTP transport
+  logger.info('Creating HTTP transport');
   const transport = new StreamableHTTPServerTransport({
     sessionIdGenerator: () => randomUUID(),
     onsessioninitialized: (sessionId) => {
       // Store the transport by session ID when session is initialized
-      logger.info("Session initialized", { sessionId });
+      logger.info("HTTP Session initialized", { sessionId });
       transports[sessionId] = transport;
     },
     // DNS rebinding protection is disabled by default for backwards compatibility
@@ -38,7 +48,7 @@ export function createTransport(): StreamableHTTPServerTransport {
 
   transport.onclose = () => {
     if (transport.sessionId) {
-      logger.info("Session closed", { sessionId: transport.sessionId });
+      logger.info("HTTP Session closed", { sessionId: transport.sessionId });
       delete transports[transport.sessionId];
     }
   };

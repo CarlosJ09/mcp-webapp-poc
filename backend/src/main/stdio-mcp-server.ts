@@ -1,122 +1,63 @@
-import { McpServer, ResourceTemplate } from "@modelcontextprotocol/sdk/server/mcp.js";
+#!/usr/bin/env node
+/**
+ * @fileoverview MCP Server entry point for Stdio transport
+ * This allows running the MCP server with stdio communication instead of HTTP
+ * Uses the same SOLID architecture as the HTTP server
+ */
+
+import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
-import { z } from "zod";
+import { registerDashboardResources } from "../application/services/dashboard-resources.js";
+import { registerDashboardTools } from "../application/services/dashboard-tools.js";
+import { createLogger } from "../shared/config/logger.js";
 
-// Create an MCP server
-const server = new McpServer({
-  name: "demo-server",
-  version: "1.0.0"
-});
+const logger = createLogger('MCP-Stdio-Server');
 
-// Add an addition tool
-server.registerTool("add",
-  {
-    title: "Addition Tool",
-    description: "Add two numbers",
-    inputSchema: { a: z.number(), b: z.number() }
-  },
-  async ({ a, b }) => ({
-    content: [{ type: "text", text: String(a + b) }]
-  })
-);
+async function startStdioServer() {
+  logger.info('Starting MCP Server with Stdio transport...');
+  
+  try {
+    // Create MCP server with same configuration as HTTP server
+    const server = new McpServer({
+      name: "dashboard-mcp-server",
+      version: "1.0.0",
+    });
 
-// Add a dynamic greeting resource
-server.registerResource(
-  "greeting",
-  new ResourceTemplate("greeting://{name}", { list: undefined }),
-  { 
-    title: "Greeting Resource",      // Display name for UI
-    description: "Dynamic greeting generator"
-  },
-  async (uri, { name }) => ({
-    contents: [{
-      uri: uri.href,
-      text: `Hello, ${name}!`
-    }]
-  })
-);
+    // Register all dashboard resources and tools using SOLID architecture
+    logger.info('Registering dashboard resources and tools...');
+    registerDashboardResources(server);
+    registerDashboardTools(server);
 
-// Add a data-fetching resource for users
-server.registerResource(
-  "user",
-  new ResourceTemplate("user://{userId}", { list: undefined }),
-  {
-    title: "User Data Resource",
-    description: "Fetch user data from JSONPlaceholder API"
-  },
-  async (uri, { userId }) => {
-    try {
-      const response = await fetch(`https://jsonplaceholder.typicode.com/users/${userId}`);
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-      }
-      const userData = await response.json();
-      
-      return {
-        contents: [{
-          uri: uri.href,
-          mimeType: "application/json",
-          text: JSON.stringify(userData, null, 2)
-        }]
-      };
-    } catch (error) {
-      return {
-        contents: [{
-          uri: uri.href,
-          text: `Error fetching user data: ${error instanceof Error ? error.message : 'Unknown error'}`
-        }]
-      };
-    }
+    // Create stdio transport
+    const transport = new StdioServerTransport();
+    
+    logger.info('Connecting server to stdio transport...');
+    await server.connect(transport);
+    
+    logger.info('🚀 MCP Server with Stdio transport started successfully');
+    logger.info('Server is ready to receive MCP requests via stdio');
+    logger.info('Available tools: get-sales-metrics, get-customer-analytics, get-inventory-metrics');
+    logger.info('Available resources: sales-data, customers-data, dashboard-metrics, items-data');
+
+  } catch (error) {
+    logger.error('Failed to start MCP server with stdio transport', error instanceof Error ? error : new Error(String(error)));
+    process.exit(1);
   }
-);
-
-// Add a posts resource that lists available posts
-server.registerResource(
-  "posts",
-  new ResourceTemplate("posts://list", { 
-    list: async () => ({
-      resources: [{
-        name: "posts://list",
-        uri: "posts://list",
-        mimeType: "application/json",
-        description: "List of recent posts"
-      }]
-    })
-  }),
-  {
-    title: "Posts Resource",
-    description: "Fetch posts from JSONPlaceholder API"
-  },
-  async (uri) => {
-    try {
-      const response = await fetch('https://jsonplaceholder.typicode.com/posts?_limit=10');
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-      }
-      const posts = await response.json();
-      
-      return {
-        contents: [{
-          uri: uri.href,
-          mimeType: "application/json",
-          text: JSON.stringify(posts, null, 2)
-        }]
-      };
-    } catch (error) {
-      return {
-        contents: [{
-          uri: uri.href,
-          text: `Error fetching posts: ${error instanceof Error ? error.message : 'Unknown error'}`
-        }]
-      };
-    }
-  }
-);
-
-// Start receiving messages on stdin and sending messages on stdout
-async function startServer() {
-  const transport = new StdioServerTransport();
-  await server.connect(transport);
 }
 
-startServer().catch(console.error);
+// Handle graceful shutdown
+process.on('SIGINT', () => {
+  logger.info('SIGINT received, shutting down stdio server...');
+  process.exit(0);
+});
+
+process.on('SIGTERM', () => {
+  logger.info('SIGTERM received, shutting down stdio server...');
+  process.exit(0);
+});
+
+// Start the server
+startStdioServer().catch((error) => {
+  logger.error('Unhandled error starting stdio server', error instanceof Error ? error : new Error(String(error)));
+  process.exit(1);
+});
