@@ -1,55 +1,27 @@
 "use client";
 
-import { useDashboardData } from "@/hooks/useDashboardData";
-import { KPICards } from "@/components/dashboard/KPICards";
-import { SalesChart } from "@/components/dashboard/SalesChart";
-import { CustomerDistributionChart } from "@/components/dashboard/CustomerDistributionChart";
-import { InventoryChart } from "@/components/dashboard/InventoryChart";
-import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
+import { useEffect } from 'react';
+import { useAuth } from "@/context/AuthProvider";
+import { useRouter } from 'next/navigation';
+import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
 
-export default function Dashboard() {
-  const {
-    salesMetricsData,
-    customersMetricsData,
-    dashboardMetricsData,
-    inventoryMetricsData,
-    error,
-    refreshData,
-    currentPeriod,
-    loadingSalesMetrics,
-    changePeriod,
-  } = useDashboardData();
+export default function Home() {
+  const { authenticated, loading } = useAuth();
+  const router = useRouter();
 
-  const kpiMetrics = {
-    totalSales: dashboardMetricsData?.totalSales ?? 0,
-    totalCustomers: dashboardMetricsData?.totalCustomers ?? 0,
-    totalItems: dashboardMetricsData?.totalItems ?? 0,
-    totalRevenue: dashboardMetricsData?.totalRevenue ?? 0,
-  };
+  useEffect(() => {
+    if (!loading) {
+      if (authenticated) {
+        router.push('/dashboard');
+      } else {
+        router.push('/login');
+      }
+    }
+  }, [authenticated, loading, router]);
 
   return (
-    <div className="min-h-screen bg-gray-100">
-      <DashboardHeader error={error} onRefresh={refreshData} />
-
-      {/* Main Dashboard */}
-      <main className="max-w-7xl mx-auto px-4 py-6">
-        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-          <KPICards metrics={kpiMetrics} />
-
-          <SalesChart
-            data={salesMetricsData}
-            currentPeriod={currentPeriod}
-            onPeriodChange={changePeriod}
-            loading={loadingSalesMetrics}
-          />
-
-          <CustomerDistributionChart data={customersMetricsData} />
-
-          <div className="lg:col-span-2">
-            <InventoryChart data={inventoryMetricsData} />
-          </div>
-        </div>
-      </main>
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <LoadingSpinner message="Loading..." />
     </div>
   );
 }

@@ -12,6 +12,8 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@auth0/auth0-react": "^2.4.0",
+    "@auth0/nextjs-auth0": "^4.9.0",
     "@modelcontextprotocol/sdk": "^1.17.4",
     "lucide-react": "^0.542.0",
     "next": "15.5.1",
