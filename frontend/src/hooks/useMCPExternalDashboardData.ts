@@ -16,7 +16,7 @@ import {
   CallToolRequest,
 } from "@modelcontextprotocol/sdk/types.js";
 
-export function useDashboardData() {
+export function useMCPExternalDashboardData() {
   const [state, setState] = useState<DashboardState>({
     salesData: [],
     customersData: [],

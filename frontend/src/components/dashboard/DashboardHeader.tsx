@@ -3,12 +3,19 @@
  * Displays the dashboard title, refresh button, user menu, and connection status
  */
 
-import { BarChart3, RefreshCw, CheckCircle, AlertCircle, User, LogOut } from 'lucide-react';
-import { useAuth } from '@/context/AuthProvider';
+import {
+  BarChart3,
+  RefreshCw,
+  CheckCircle,
+  AlertCircle,
+  User,
+  LogOut,
+} from "lucide-react";
+import { useAuth } from "@/context/AuthProvider";
 
 interface DashboardHeaderProps {
-  error: string | null;
-  onRefresh: () => void;
+  error?: string | null;
+  onRefresh?: () => void;
 }
 
 export function DashboardHeader({ error, onRefresh }: DashboardHeaderProps) {
@@ -22,15 +29,17 @@ export function DashboardHeader({ error, onRefresh }: DashboardHeaderProps) {
             <BarChart3 className="h-6 w-6" />
             MCP Analytics Dashboard
           </h1>
-          
+
           <div className="flex items-center gap-4">
-            <button
-              onClick={onRefresh}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
-            >
-              <RefreshCw className="h-4 w-4" />
-              Refresh Data
-            </button>
+            {onRefresh && (
+              <button
+                onClick={onRefresh}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
+              >
+                <RefreshCw className="h-4 w-4" />
+                Refresh Data
+              </button>
+            )}
 
             {/* Status Indicator */}
             <div className="flex items-center gap-3">
@@ -53,7 +62,9 @@ export function DashboardHeader({ error, onRefresh }: DashboardHeaderProps) {
               <div className="flex items-center gap-3 border-l border-gray-200 pl-4">
                 <div className="flex items-center gap-2 text-gray-700">
                   <User className="h-5 w-5 text-gray-400" />
-                  <span className="text-sm font-medium">{user.name || user.email}</span>
+                  <span className="text-sm font-medium">
+                    {user.name || user.email}
+                  </span>
                 </div>
                 <button
                   onClick={logout}
