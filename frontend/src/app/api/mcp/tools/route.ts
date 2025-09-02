@@ -11,7 +11,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // URL del backend MCP (ajusta según tu configuración)
+    // Backend MCP URL (adjust according to your configuration)
     const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:3000';
     
     console.log('🔧 Tools API Debug:', { 
@@ -21,7 +21,7 @@ export async function POST(request: NextRequest) {
       parameters 
     });
     
-    // Llamada al backend MCP para ejecutar herramientas específicas
+    // Call to backend MCP to execute specific tools
     const response = await fetch(`${backendUrl}/api/mcp/tools`, {
       method: 'POST',
       headers: {

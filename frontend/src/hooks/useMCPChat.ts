@@ -17,7 +17,7 @@ export function useMCPChat() {
     setError(null);
 
     try {
-      // Llamada al endpoint de chat del backend
+      // Call to backend chat endpoint
       const response = await fetch('/api/mcp/chat', {
         method: 'POST',
         headers: {
@@ -53,7 +53,7 @@ export function useMCPChat() {
   };
 }
 
-// Funciones helper para formatear respuestas
+// Helper functions to format responses
 function formatCustomersResponse(customers: any[]): string {
   if (!customers || customers.length === 0) {
     return 'No customers found in the database.';

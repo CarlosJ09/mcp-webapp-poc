@@ -52,7 +52,7 @@ export function ChatWidget({ onSendMessage }: ChatWidgetProps) {
     setIsLoading(true);
 
     try {
-      // Llamar al servicio MCP
+      // Call MCP service
       const response = onSendMessage 
         ? await onSendMessage(currentMessage)
         : await mockMCPResponse(currentMessage);

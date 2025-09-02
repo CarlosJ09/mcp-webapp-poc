@@ -7,7 +7,7 @@ import { externalApiService } from "../services/external/api-service";
 const router = express.Router();
 const logger = createLogger('MCP-Chat-Routes');
 
-// Endpoint para chat conversacional
+// Endpoint for conversational chat
 router.post("/chat", async (req, res) => {
   try {
     const { message } = req.body;
@@ -21,7 +21,7 @@ router.post("/chat", async (req, res) => {
 
     logger.info("Processing chat message", { message: message.substring(0, 100) + '...' });
 
-    // Por ahora, devolver una respuesta simulada hasta que implementemos la integración completa
+    // For now, return a simulated response until we implement full integration
     const response = await processChatMessage(message);
 
     res.json({
@@ -38,7 +38,7 @@ router.post("/chat", async (req, res) => {
   }
 });
 
-// Endpoint para ejecutar herramientas MCP específicas
+// Endpoint to execute specific MCP tools
 router.post("/tools", async (req, res) => {
   try {
     const { tool, parameters = {} } = req.body;
@@ -52,7 +52,7 @@ router.post("/tools", async (req, res) => {
 
     logger.info("Executing MCP tool directly", { tool, parameters });
 
-    // Ejecutar la herramienta MCP directamente
+    // Execute the MCP tool directly
     const result = await executeMCPTool(tool, parameters);
     logger.info("Tool execution completed", { tool, hasResult: !!result });
 
@@ -70,11 +70,11 @@ router.post("/tools", async (req, res) => {
   }
 });
 
-// Función para procesar mensajes de chat (temporalmente simulada)
+// Function to process chat messages (temporarily simulated)
 async function processChatMessage(message: string): Promise<string> {
   logger.info("Processing chat message", { message: message.substring(0, 50) + '...' });
   
-  // Análisis básico del mensaje para determinar la respuesta
+  // Basic message analysis to determine the response
   const lowerMessage = message.toLowerCase();
   
   if (lowerMessage.includes('hola') || lowerMessage.includes('hello')) {
@@ -113,11 +113,11 @@ async function processChatMessage(message: string): Promise<string> {
     }
   }
   
-  // Respuesta por defecto
+  // Default response
   return `I received your query: "${message}". I can help you with information about customers, products, sales and inventory. Could you be more specific about what type of information you need?`;
 }
 
-// Función para ejecutar herramientas MCP
+// Function to execute MCP tools
 async function executeMCPTool(toolName: string, parameters: any): Promise<any> {
   logger.info("executeMCPTool called", { toolName, parameters });
   
@@ -128,7 +128,7 @@ async function executeMCPTool(toolName: string, parameters: any): Promise<any> {
       case 'query-customers':
         response = await externalApiService.getCustomersData();
         if (response.success) {
-          // Si hay un parámetro de límite, aplicarlo
+          // If there's a limit parameter, apply it
           const customers = Array.isArray(response.data) ? response.data : [];
           const limit = parameters.limit || customers.length;
           return customers.slice(0, limit);
@@ -167,14 +167,14 @@ async function executeMCPTool(toolName: string, parameters: any): Promise<any> {
   }
 }
 
-// Funciones de formato
+// Formatting functions
 function formatCustomersResponse(customers: any[]): string {
   if (!customers || customers.length === 0) {
     return 'No customers found in the database.';
   }
   
   const customerList = customers.map(customer => {
-    // Manejar diferentes estructuras de datos del API real
+    // Handle different data structures from the real API
     const name = customer.name || customer.customerName || customer.fullName || 'Unknown';
     const email = customer.email || customer.customerEmail || 'No email';
     const phone = customer.phone || customer.phoneNumber || customer.contactNumber || '';
@@ -191,7 +191,7 @@ function formatItemsResponse(items: any[]): string {
   }
   
   const itemList = items.map(item => {
-    // Manejar diferentes estructuras de datos del API real
+    // Handle different data structures from the real API
     const name = item.name || item.itemName || item.productName || 'Unknown Product';
     const stock = item.stock || item.inventory || item.quantity || 0;
     const price = item.price || item.unitPrice || item.cost || 0;
@@ -207,7 +207,7 @@ function formatSalesResponse(salesData: any): string {
     return 'No sales data found for the requested period.';
   }
   
-  // Manejar diferentes estructuras de respuesta del API
+  // Handle different response structures from the API
   if (Array.isArray(salesData)) {
     const totalSales = salesData.reduce((sum: number, sale: any) => {
       const saleAmount = sale.total || sale.amount || sale.revenue || 0;
@@ -221,7 +221,7 @@ function formatSalesResponse(salesData: any): string {
     
     return `Sales Analysis:\n\n• Total Sales: $${totalSales.toLocaleString()}\n• Total Orders: ${totalOrders}\n• Average per Order: $${totalOrders > 0 ? (totalSales/totalOrders).toFixed(2) : '0.00'}`;
   } else {
-    // Si es un objeto único
+    // If it's a single object
     const total = salesData.totalSales || salesData.total || salesData.revenue || 0;
     const orders = salesData.totalOrders || salesData.orders || salesData.transactions || 0;
     

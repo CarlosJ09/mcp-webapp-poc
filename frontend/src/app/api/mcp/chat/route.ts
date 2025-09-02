@@ -11,7 +11,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // URL del backend MCP (ajusta según tu configuración)
+    // Backend MCP URL (adjust according to your configuration)
     const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:3000';
     
     console.log('🔍 Chat API Debug:', { 
