@@ -4,14 +4,19 @@
   "description": "",
   "license": "ISC",
   "author": "",
-  "main": "src/main/index.js",
+  "main": "src/server-api.js",
   "scripts": {
-    "start": "tsx watch src/main/index.ts",
-    "start:stdio": "tsx watch src/main/stdio-mcp-server.ts",
+    "start": "tsx watch src/server-api.ts",
+    "start:stdio": "tsx watch src/server.ts",
+    "start:http": "tsx watch src/server-api.ts",
+    "dev": "tsx watch src/server-api.ts",
+    "dev:stdio": "tsx watch src/server.ts",
     "build": "tsc",
     "build:watch": "tsc --watch",
-    "start:prod": "node dist/src/main/index.js",
-    "start:stdio:prod": "node dist/src/main/stdio-mcp-server.js",
+    "start:prod": "node dist/src/server-api.js",
+    "start:stdio:prod": "node dist/src/server.js",
+    "clean": "rm -rf dist",
+    "prebuild": "npm run clean",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "dependencies": {
@@ -21,7 +26,9 @@
     "cors": "^2.8.5",
     "dotenv": "^17.2.1",
     "express": "^5.1.0",
-    "express-rate-limit": "^8.0.1"
+    "express-rate-limit": "^8.0.1",
+    "mysql2": "^3.14.4",
+    "zod": "^3.25.76"
   },
   "devDependencies": {
     "@types/express": "^5.0.3",

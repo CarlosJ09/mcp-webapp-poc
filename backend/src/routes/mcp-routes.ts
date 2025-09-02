@@ -1,5 +1,6 @@
 import express from "express";
 import { isInitializeRequest } from "@modelcontextprotocol/sdk/types.js";
+import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import { 
   createMCPServer, 
   createTransport, 
@@ -21,14 +22,14 @@ router.post("/", async (req, res) => {
       method: req.body?.method 
     });
     
-    let transport = sessionId ? getTransport(sessionId) : undefined;
+    let transport: StreamableHTTPServerTransport | undefined = sessionId ? getTransport(sessionId) : undefined;
 
     if (transport) {
       logger.info("Reusing existing transport", { sessionId });
     } else if (sessionId) {
       // Session ID provided but transport doesn't exist (possibly cleaned up)
       logger.info("Creating new transport for existing session", { sessionId });
-      transport = createTransport();
+      transport = createTransport('http') as StreamableHTTPServerTransport;
       const server = createMCPServer();
       
       // Connect server to transport
@@ -36,7 +37,7 @@ router.post("/", async (req, res) => {
     } else if (isInitializeRequest(req.body)) {
       logger.info("Creating new transport for initialize request");
       
-      transport = createTransport();
+      transport = createTransport('http') as StreamableHTTPServerTransport;
       const server = createMCPServer();
       
       // Connect server to transport
@@ -52,6 +53,10 @@ router.post("/", async (req, res) => {
         id: null,
       });
       return;
+    }
+
+    if (!transport) {
+      throw new Error('Transport could not be created');
     }
 
     await transport.handleRequest(req, res, req.body);

@@ -7,6 +7,11 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { createLogger } from "../../shared/config/logger";
 import { externalApiService } from "../../infrastructure/external/api-service";
+import { registerCustomerTools } from "./customer-tools";
+import { registerItemsTools } from "./items-tools";
+import { registerAnalyticsTools } from "./analytics-tools";
+import { registerRetentionTools } from "./retention-tools";
+import { registerSQLTools } from "./sql-tools";
 
 const logger = createLogger('Dashboard-Tools');
 
@@ -15,6 +20,7 @@ const logger = createLogger('Dashboard-Tools');
  * @param server - MCP server instance
  */
 export function registerDashboardTools(server: McpServer): void {
+  // Register external API tools
   server.registerTool(
     "get-sales-metrics",
     {
@@ -128,4 +134,11 @@ export function registerDashboardTools(server: McpServer): void {
       }
     }
   );
+
+  // Register database tools from separate modules
+  registerCustomerTools(server);
+  registerItemsTools(server);
+  registerAnalyticsTools(server);
+  registerRetentionTools(server);
+  registerSQLTools(server);
 }

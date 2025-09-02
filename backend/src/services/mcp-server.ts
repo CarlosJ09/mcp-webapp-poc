@@ -2,9 +2,9 @@ import { randomUUID } from "node:crypto";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
-import { registerDashboardResources } from "../src/application/services/dashboard-resources.js";
-import { registerDashboardTools } from "../src/application/services/dashboard-tools.js";
-import { createLogger } from "../src/shared/config/logger.js";
+import { registerDashboardResources } from "../resources/dashboard-resources.js";
+import { registerDashboardTools } from "../tools/dashboard-tools.js";
+import { createLogger } from "../config/logger.js";
 
 const logger = createLogger('MCP-Server-Service');
 

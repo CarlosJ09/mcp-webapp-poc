@@ -7,11 +7,11 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { createLogger } from "../config/logger";
 import { externalApiService } from "../services/external/api-service";
-import { registerCustomerTools } from "../src/application/services/customer-tools";
-import { registerItemsTools } from "../src/application/services/items-tools";
-import { registerAnalyticsTools } from "../src/application/services/analytics-tools";
-import { registerRetentionTools } from "../src/application/services/retention-tools";
-import { registerSQLTools } from "../src/application/services/sql-tools";
+import { registerCustomerTools } from "../application/services/customer-tools";
+import { registerItemsTools } from "../application/services/items-tools";
+import { registerAnalyticsTools } from "../application/services/analytics-tools";
+import { registerRetentionTools } from "../application/services/retention-tools";
+import { registerSQLTools } from "../application/services/sql-tools";
 
 const logger = createLogger('Dashboard-Tools');
 
