@@ -4,17 +4,20 @@ import { useEffect } from 'react';
 import { useAuth } from "@/context/AuthProvider";
 import { useRouter } from 'next/navigation';
 import { useDashboardData } from "@/hooks/useDashboardData";
+import { useMCPChat } from "@/hooks/useMCPChat";
 import { KPICards } from "@/components/dashboard/KPICards";
 import { SalesChart } from "@/components/dashboard/SalesChart";
 import { CustomerDistributionChart } from "@/components/dashboard/CustomerDistributionChart";
 import { InventoryChart } from "@/components/dashboard/InventoryChart";
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
+import { ChatWidget } from "@/components/chat/ChatWidget";
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
 import { LogOut, User } from 'lucide-react';
 
 export default function DashboardPage() {
   const { user, authenticated, loading, logout } = useAuth();
   const router = useRouter();
+  const { sendMessage } = useMCPChat();
   
   const {
     salesMetricsData,
@@ -117,6 +120,9 @@ export default function DashboardPage() {
           </div>
         </div>
       </main>
+
+      {/* Chat Widget */}
+      <ChatWidget onSendMessage={sendMessage} />
     </div>
   );
 }
