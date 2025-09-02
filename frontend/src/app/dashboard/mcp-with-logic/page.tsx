@@ -6,7 +6,7 @@ import { SalesChart } from "@/components/dashboard/SalesChart";
 import { CustomerDistributionChart } from "@/components/dashboard/CustomerDistributionChart";
 import { InventoryChart } from "@/components/dashboard/InventoryChart";
 
-export default function DashboardPage() {
+export default function MCPWithLogicDashboardPage() {
   const {
     salesMetricsData,
     customersMetricsData,
