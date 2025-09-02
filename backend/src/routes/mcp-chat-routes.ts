@@ -3,6 +3,7 @@ import { createMCPServer } from "../services/mcp-server";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { createLogger } from "../config/logger";
 import { externalApiService } from "../services/external/api-service";
+import { aiService } from "../services/ai-service";
 
 const router = express.Router();
 const logger = createLogger('MCP-Chat-Routes');
@@ -70,9 +71,12 @@ router.post("/tools", async (req, res) => {
   }
 });
 
-// Function to process chat messages (temporarily simulated)
+// Function to process chat messages with AI integration
 async function processChatMessage(message: string): Promise<string> {
-  logger.info("Processing chat message", { message: message.substring(0, 50) + '...' });
+  logger.info("Processing chat message with AI", { 
+    message: message.substring(0, 50) + '...',
+    aiEnabled: aiService.isAIEnabled()
+  });
   
   // Basic message analysis to determine the response
   const lowerMessage = message.toLowerCase();
@@ -83,11 +87,13 @@ async function processChatMessage(message: string): Promise<string> {
   
   if (lowerMessage.includes('cliente') || lowerMessage.includes('customer')) {
     try {
-      logger.info("Processing customer query");
-      const customers = await executeMCPTool('query-customers', { limit: 5 });
+      logger.info("Processing customer query with AI");
+      const customers = await executeMCPTool('query-customers', { limit: 10000 });
       logger.info("Customer data received", { count: customers ? customers.length : 0 });
-      const response = formatCustomersResponse(customers);
-      logger.info("Customer response formatted", { responseLength: response.length });
+      
+      // Use AI to generate intelligent response
+      const response = await aiService.generateIntelligentResponse(message, customers, 'customers');
+      logger.info("AI response generated for customers", { responseLength: response.length });
       return response;
     } catch (error) {
       logger.error("Error getting customer data", error instanceof Error ? error : new Error('Unknown error'));
@@ -95,26 +101,75 @@ async function processChatMessage(message: string): Promise<string> {
     }
   }
   
-  if (lowerMessage.includes('producto') || lowerMessage.includes('item')) {
+  if (lowerMessage.includes('producto') || lowerMessage.includes('item') || lowerMessage.includes('inventory')) {
     try {
-      const items = await executeMCPTool('query-items', { limit: 5 });
-      return formatItemsResponse(items);
+      logger.info("Processing inventory query with AI");
+      const items = await executeMCPTool('query-items', { limit: 10000 });
+      logger.info("Items data received", { count: items ? items.length : 0 });
+      
+      // Use AI to generate intelligent response
+      const response = await aiService.generateIntelligentResponse(message, items, 'items');
+      logger.info("AI response generated for items", { responseLength: response.length });
+      return response;
     } catch (error) {
+      logger.error("Error getting product data", error instanceof Error ? error : new Error('Unknown error'));
       return "I couldn't get product information at this time. Please try again.";
     }
   }
   
-  if (lowerMessage.includes('venta') || lowerMessage.includes('sale')) {
+  // Improved sales detection with more keywords
+  if (lowerMessage.includes('venta') || lowerMessage.includes('sale') || 
+      lowerMessage.includes('ventas') || lowerMessage.includes('sales') ||
+      lowerMessage.includes('ingresos') || lowerMessage.includes('revenue') ||
+      lowerMessage.includes('facturación') || lowerMessage.includes('billing') ||
+      lowerMessage.includes('hoy') || lowerMessage.includes('today') ||
+      lowerMessage.includes('mes') || lowerMessage.includes('month') ||
+      lowerMessage.includes('día') || lowerMessage.includes('day')) {
     try {
-      const sales = await executeMCPTool('sales-monthly-analysis', { months: 3 });
-      return formatSalesResponse(sales);
+      logger.info("Processing sales query with AI", { query: message });
+      const sales = await executeMCPTool('sales-monthly-analysis', { months: 12 });
+      logger.info("Sales data received", { hasData: !!sales });
+      
+      // Use AI to generate intelligent response
+      const response = await aiService.generateIntelligentResponse(message, sales, 'sales');
+      logger.info("AI response generated for sales", { responseLength: response.length });
+      return response;
     } catch (error) {
+      logger.error("Error getting sales data", error instanceof Error ? error : new Error('Unknown error'));
       return "I couldn't get sales information at this time. Please try again.";
     }
   }
   
-  // Default response
-  return `I received your query: "${message}". I can help you with information about customers, products, sales and inventory. Could you be more specific about what type of information you need?`;
+  // Default response with AI assistance - try to determine what the user wants
+  try {
+    logger.info("Processing general query with AI", { query: message });
+    
+    // Try to get sales data for general queries that might be about sales
+    const salesKeywords = ['cuanto', 'total', 'dinero', 'ganancia', 'profit', 'money', 'earned', 'made'];
+    const mightBeSales = salesKeywords.some(keyword => lowerMessage.includes(keyword));
+    
+    if (mightBeSales) {
+      const sales = await executeMCPTool('sales-monthly-analysis', { months: 12 });
+      return await aiService.generateIntelligentResponse(message, sales, 'sales');
+    }
+    
+    // For other queries, provide a helpful response
+    const helpData = { 
+      query: message, 
+      available_services: [
+        'Customer information (clientes, customers)',
+        'Product inventory (productos, items, inventory)', 
+        'Sales data (ventas, sales, revenue)',
+        'Business analytics (análisis, analytics)'
+      ]
+    };
+    
+    return await aiService.generateIntelligentResponse(message, helpData, 'customers');
+  } catch (error) {
+    logger.error("Error in default AI response", error instanceof Error ? error : new Error('Unknown error'));
+    // Fallback if AI fails
+    return `I received your query: "${message}". I can help you with information about customers, products, sales and inventory. Could you be more specific about what type of information you need?`;
+  }
 }
 
 // Function to execute MCP tools
