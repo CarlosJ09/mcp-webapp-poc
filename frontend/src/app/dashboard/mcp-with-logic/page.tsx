@@ -1,21 +1,12 @@
 "use client";
 
-import { useDashboardData } from "@/hooks/useDashboardData";
+import { useMCPExternalDashboardData } from "@/hooks/useMCPExternalDashboardData";
 import { KPICards } from "@/components/dashboard/KPICards";
-import { SalesChart } from "@/components/dashboard/SalesChart";
-import { CustomerDistributionChart } from "@/components/dashboard/CustomerDistributionChart";
-import { InventoryChart } from "@/components/dashboard/InventoryChart";
 
-export default function MCPWithLogicDashboardPage() {
+export default function MCPWithLogicPage() {
   const {
-    salesMetricsData,
-    customersMetricsData,
     dashboardMetricsData,
-    inventoryMetricsData,
-    currentPeriod,
-    loadingSalesMetrics,
-    changePeriod,
-  } = useDashboardData();
+  } = useMCPExternalDashboardData();
 
   const kpiMetrics = {
     totalSales: dashboardMetricsData?.totalSales ?? 0,
@@ -26,22 +17,39 @@ export default function MCPWithLogicDashboardPage() {
 
   return (
     <div className="px-4 py-6 sm:px-0">
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold text-gray-900">MCP with Logic</h1>
+        <p className="mt-2 text-gray-600">
+          This page demonstrates the MCP protocol with business logic integration.
+        </p>
+      </div>
+
       <div className="mt-8">
         <KPICards metrics={kpiMetrics} />
       </div>
 
-      <div className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <SalesChart
-          data={salesMetricsData}
-          loading={loadingSalesMetrics}
-          currentPeriod={currentPeriod}
-          onPeriodChange={changePeriod}
-        />
-        <CustomerDistributionChart data={customersMetricsData} />
-      </div>
-
-      <div className="mt-6">
-        <InventoryChart data={inventoryMetricsData} />
+      <div className="mt-8 bg-white rounded-lg shadow p-6">
+        <h2 className="text-xl font-semibold text-gray-900 mb-4">MCP Protocol Features</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="space-y-3">
+            <h3 className="font-medium text-gray-900">Protocol Benefits</h3>
+            <ul className="text-sm text-gray-600 space-y-2">
+              <li>• Structured data exchange</li>
+              <li>• Type-safe communication</li>
+              <li>• Extensible tool system</li>
+              <li>• Standardized interfaces</li>
+            </ul>
+          </div>
+          <div className="space-y-3">
+            <h3 className="font-medium text-gray-900">Business Logic Integration</h3>
+            <ul className="text-sm text-gray-600 space-y-2">
+              <li>• Custom tool implementations</li>
+              <li>• Business rule enforcement</li>
+              <li>• Data validation</li>
+              <li>• Workflow automation</li>
+            </ul>
+          </div>
+        </div>
       </div>
     </div>
   );

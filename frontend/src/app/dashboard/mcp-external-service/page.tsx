@@ -1,6 +1,6 @@
 "use client";
 
-import { useDashboardData } from "@/hooks/useDashboardData";
+import { useMCPExternalDashboardData } from "@/hooks/useMCPExternalDashboardData";
 import { KPICards } from "@/components/dashboard/KPICards";
 import { SalesChart } from "@/components/dashboard/SalesChart";
 import { CustomerDistributionChart } from "@/components/dashboard/CustomerDistributionChart";
@@ -15,7 +15,7 @@ export default function MCPExternalServiceDashboardPage() {
     currentPeriod,
     loadingSalesMetrics,
     changePeriod,
-  } = useDashboardData();
+  } = useMCPExternalDashboardData();
 
   const kpiMetrics = {
     totalSales: dashboardMetricsData?.totalSales ?? 0,
