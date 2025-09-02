@@ -19,8 +19,8 @@ import type { SalesMetrics, Period } from "@/types/dashboard";
 
 interface SalesChartProps {
   data: SalesMetrics;
-  currentPeriod: Period;
-  onPeriodChange: (period: Period) => void;
+  currentPeriod?: Period;
+  onPeriodChange?: (period: Period) => void;
   loading?: boolean;
 }
 
@@ -44,11 +44,13 @@ export function SalesChart({
           <TrendingUp className="h-5 w-5" />
           Sales & Revenue Trends
         </h2>
-        <PeriodSelector
-          selectedPeriod={currentPeriod}
-          onPeriodChange={onPeriodChange}
-          loading={loading}
-        />
+        {currentPeriod && onPeriodChange ? (
+          <PeriodSelector
+            selectedPeriod={currentPeriod}
+            onPeriodChange={onPeriodChange}
+            loading={loading}
+          />
+        ) : null}
       </div>
 
       {loading && (

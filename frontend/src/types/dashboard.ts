@@ -39,6 +39,14 @@ export interface SalesMetrics {
   }[];
 }
 
+export interface SalesMetricsByMonth {
+  month: string;
+  total_sales: number;
+  total_revenue: string;
+  avg_order_value: string;
+  unique_customers: number;
+}
+
 export interface Payment {
   id: string;
   type: string;
@@ -125,6 +133,12 @@ export interface DashboardState {
   customersMetricsData: CustomerMetrics;
   inventoryMetricsData: InventoryMetricsData;
   itemsData: Item[];
+  loading: boolean;
+  error: string | null;
+}
+
+export interface DashboardStateWithLogic {
+  salesMetricsData: SalesMetricsByMonth;
   loading: boolean;
   error: string | null;
 }

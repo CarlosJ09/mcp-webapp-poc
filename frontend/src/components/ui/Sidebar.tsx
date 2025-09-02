@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BarChart3, Cpu, Server, RefreshCw, Menu, X } from "lucide-react";
+import { BarChart3, Cpu, Server, Menu, X, ServerCog } from "lucide-react";
 
 interface NavItem {
   name: string;
@@ -22,13 +22,13 @@ const navigation: NavItem[] = [
   {
     name: "MCP with Logic",
     href: "/dashboard/mcp-with-logic",
-    icon: Cpu,
+    icon: ServerCog,
     /*   description: "MCP protocol with business logic", */
   },
   {
     name: "REST API",
     href: "/dashboard/rest-api",
-    icon: RefreshCw,
+    icon: Cpu,
     /* description: "Traditional REST API approach", */
   },
   {
