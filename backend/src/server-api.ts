@@ -20,6 +20,7 @@ import {
   readinessCheckHandler 
 } from "./presentation/middleware/health";
 import mcpRoutes from "./presentation/routes/mcp-routes";
+import mcpChatRoutes from "./routes/mcp-chat-routes";
 
 /**
  * Initialize Express application
@@ -80,6 +81,7 @@ if (config.health_check.enabled) {
  * API routes
  */
 app.use("/mcp", mcpRoutes);
+app.use("/api/mcp", mcpChatRoutes);
 
 /**
  * Error handling middleware (must be last)
